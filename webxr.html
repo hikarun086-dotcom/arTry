@@ -3,127 +3,263 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>AR Zone</title>
+<title>MIRA-E AR Zone</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
-:root{--neon:#00FFB2;--orange:#FF8C00;--blue:#4488FF;--red:#FF2D6B;--dark:#070A0E;}
+:root{
+  --neon:#00C896;--gold:#FFB830;--red:#FF5C5C;--blue:#6AB0FF;
+  --dark:#0A0D10;--glass:rgba(10,13,16,.88);--border:rgba(255,255,255,.09);
+}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{background:var(--dark);color:#fff;font-family:'Syne',sans-serif;height:100vh;overflow:hidden;user-select:none;}
 
+/* LOADER */
 #loader{position:fixed;inset:0;background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s;}
-#loader h1{font-size:clamp(2rem,8vw,3.5rem);font-weight:800;letter-spacing:-2px;background:linear-gradient(135deg,var(--neon),#fff,var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-#loader p{font-family:'Space Mono',monospace;font-size:.65rem;color:rgba(255,255,255,.35);margin-top:.4rem;letter-spacing:3px;}
-.lbar{width:160px;height:2px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:1.8rem;}
-.lbar-fill{height:100%;background:var(--neon);width:0;transition:width .08s;}
+#loader .brand{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:4px;color:rgba(255,255,255,.25);margin-bottom:.4rem;}
+#loader h1{font-size:clamp(2rem,7vw,3rem);font-weight:800;letter-spacing:-1px;background:linear-gradient(135deg,var(--neon),#fff,var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+#loader sub{font-family:'Space Mono',monospace;font-size:.55rem;color:rgba(255,255,255,.25);letter-spacing:3px;margin-top:.3rem;}
+.lbar{width:130px;height:2px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden;margin-top:1.4rem;}
+.lbar-fill{height:100%;background:var(--neon);width:0;transition:width .06s;}
 
+/* HUD */
 #hud{position:fixed;inset:0;z-index:10;pointer-events:none;}
 
-#topbar{pointer-events:all;position:absolute;top:0;left:0;right:0;padding:1rem 1.2rem;background:linear-gradient(to bottom,rgba(7,10,14,.92),transparent);display:flex;align-items:center;justify-content:space-between;gap:.6rem;}
-.logo{font-weight:800;font-size:1.1rem;letter-spacing:-1px;flex-shrink:0;}.logo b{color:var(--neon);}
-.badge{font-family:'Space Mono',monospace;font-size:.52rem;letter-spacing:1px;border:1px solid rgba(0,255,178,.3);border-radius:99px;padding:.22rem .65rem;color:var(--neon);transition:all .3s;flex-shrink:0;}
-.badge.warn{color:var(--red);border-color:rgba(255,45,107,.35);}
+/* TOPBAR */
+#topbar{pointer-events:all;position:absolute;top:0;left:0;right:0;
+  padding:.85rem 1rem;background:linear-gradient(to bottom,rgba(10,13,16,.95),transparent);
+  display:flex;align-items:center;gap:.5rem;}
+.logo-col{flex:1;display:flex;flex-direction:column;line-height:1.1;}
+.logo-brand{font-family:'Space Mono',monospace;font-size:.48rem;color:rgba(255,255,255,.28);letter-spacing:3px;}
+.logo-title{font-weight:800;font-size:1rem;letter-spacing:-.5px;}
+.logo-title b{color:var(--neon);}
+#surf-pill{font-family:'Space Mono',monospace;font-size:.48rem;letter-spacing:1px;
+  border-radius:99px;padding:.2rem .55rem;border:1px solid transparent;transition:all .25s;flex-shrink:0;}
+#surf-pill.floor{color:var(--neon);border-color:rgba(0,200,150,.3);}
+#surf-pill.wall{color:var(--gold);border-color:rgba(255,184,48,.3);}
+#surf-pill.ceiling{color:var(--blue);border-color:rgba(106,176,255,.3);}
+#ar-pill{font-family:'Space Mono',monospace;font-size:.48rem;letter-spacing:1px;
+  border:1px solid rgba(0,200,150,.28);border-radius:99px;padding:.2rem .55rem;color:var(--neon);flex-shrink:0;}
+#ar-pill.warn{color:var(--red);border-color:rgba(255,92,92,.28);}
 
-/* SURFACE TYPE indicator */
-#surf-type{font-family:'Space Mono',monospace;font-size:.52rem;letter-spacing:1px;border-radius:99px;padding:.22rem .65rem;transition:all .3s;flex-shrink:0;border:1px solid transparent;}
-#surf-type.floor{color:var(--neon);border-color:rgba(0,255,178,.3);}
-#surf-type.wall{color:var(--orange);border-color:rgba(255,140,0,.35);}
-#surf-type.ceiling{color:var(--blue);border-color:rgba(68,136,255,.35);}
-
-#status-wrap{position:absolute;top:3.8rem;left:50%;transform:translateX(-50%);pointer-events:none;}
-#status-text{font-family:'Space Mono',monospace;font-size:.56rem;letter-spacing:1.5px;color:rgba(255,255,255,.5);background:rgba(7,10,14,.55);backdrop-filter:blur(6px);border-radius:99px;padding:.3rem .9rem;border:1px solid rgba(255,255,255,.06);white-space:nowrap;}
+/* STATUS */
+#status-wrap{position:absolute;top:3.6rem;left:50%;transform:translateX(-50%);pointer-events:none;}
+#status-txt{font-family:'Space Mono',monospace;font-size:.52rem;letter-spacing:1.3px;
+  color:rgba(255,255,255,.45);background:rgba(10,13,16,.58);backdrop-filter:blur(8px);
+  border-radius:99px;padding:.26rem .75rem;border:1px solid var(--border);white-space:nowrap;}
 
 /* MODE PILL */
-#mode-pill{pointer-events:all;position:absolute;top:5rem;left:50%;transform:translateX(-50%);display:none;border-radius:99px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:rgba(7,10,14,.8);backdrop-filter:blur(10px);}
+#mode-pill{pointer-events:all;position:absolute;top:4.8rem;left:50%;transform:translateX(-50%);
+  display:none;border-radius:99px;overflow:hidden;border:1px solid var(--border);
+  background:rgba(10,13,16,.85);backdrop-filter:blur(10px);}
 #mode-pill.show{display:flex;}
-.mpb{font-family:'Space Mono',monospace;font-size:.52rem;letter-spacing:1.2px;padding:.38rem .85rem;cursor:pointer;border:none;background:transparent;color:rgba(255,255,255,.4);transition:all .2s;touch-action:manipulation;}
+.mpb{font-family:'Space Mono',monospace;font-size:.48rem;letter-spacing:1px;
+  padding:.35rem .8rem;cursor:pointer;border:none;background:transparent;
+  color:rgba(255,255,255,.38);transition:all .18s;touch-action:manipulation;}
 .mpb.on{background:var(--neon);color:#000;font-weight:700;}
 
-/* SCAN UI */
-#scan-ui{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.8rem;opacity:0;transition:opacity .4s;}
+/* SCAN */
+#scan-ui{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.75rem;
+  opacity:0;transition:opacity .4s;}
 #scan-ui.show{opacity:1;}
-.rings{position:relative;width:96px;height:96px;display:flex;align-items:center;justify-content:center;}
+.rings{position:relative;width:88px;height:88px;display:flex;align-items:center;justify-content:center;}
 .ring{position:absolute;border-radius:50%;border:1.5px solid var(--neon);animation:rp 2s ease-in-out infinite;}
-.r1{width:36px;height:36px;}.r2{width:60px;height:60px;animation-delay:.25s;opacity:.6;}.r3{width:88px;height:88px;animation-delay:.5s;opacity:.3;}
-.ch{width:12px;height:12px;position:relative;}
+.r1{width:30px;height:30px;}.r2{width:54px;height:54px;animation-delay:.25s;opacity:.5;}
+.r3{width:80px;height:80px;animation-delay:.5s;opacity:.22;}
+.ch{width:10px;height:10px;position:relative;}
 .ch::before,.ch::after{content:'';position:absolute;background:var(--neon);}
-.ch::before{width:2px;height:12px;left:5px;top:0;}.ch::after{width:12px;height:2px;top:5px;left:0;}
-@keyframes rp{0%,100%{transform:scale(1);}50%{transform:scale(.9);opacity:.3;}}
-.scan-lbl{font-family:'Space Mono',monospace;font-size:.56rem;color:rgba(255,255,255,.45);letter-spacing:2px;text-align:center;line-height:1.8;}
+.ch::before{width:2px;height:10px;left:4px;top:0;}.ch::after{width:10px;height:2px;top:4px;left:0;}
+@keyframes rp{0%,100%{transform:scale(1);}50%{transform:scale(.88);opacity:.22;}}
+.scan-lbl{font-family:'Space Mono',monospace;font-size:.52rem;color:rgba(255,255,255,.38);
+  letter-spacing:1.5px;text-align:center;line-height:1.9;}
 
-/* PLACE HINT — adapts color per surface type */
-#tap-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.6rem;opacity:0;transition:opacity .4s;}
+/* TAP HINT */
+#tap-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity .4s;}
 #tap-hint.show{opacity:1;}
-.tap-ring{width:52px;height:52px;border-radius:50%;border:2px solid var(--tap-color,var(--neon));animation:ping 1.5s ease-out infinite;}
-@keyframes ping{0%{box-shadow:0 0 0 0 var(--tap-glow,rgba(0,255,178,.5));}70%{box-shadow:0 0 0 16px transparent;}100%{box-shadow:0 0 0 0 transparent;}}
-.tap-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:1.3rem;}
-.tap-lbl{font-family:'Space Mono',monospace;font-size:.56rem;letter-spacing:2px;}
+.tap-ring{width:46px;height:46px;border-radius:50%;border:2px solid var(--neon);
+  animation:ping 1.5s ease-out infinite;}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(0,200,150,.5);}
+  70%{box-shadow:0 0 0 14px rgba(0,200,150,0);}100%{box-shadow:0 0 0 0 rgba(0,200,150,0);}}
+.tap-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:1.15rem;}
+.tap-lbl{font-family:'Space Mono',monospace;font-size:.52rem;color:var(--neon);letter-spacing:1.5px;}
 
 /* MOVE / GRAB */
-#move-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.7rem;opacity:0;transition:opacity .4s;text-align:center;}
-#move-hint.show{opacity:1;}
-.move-ring{width:56px;height:56px;border-radius:50%;border:2px dashed var(--neon);animation:spin 3s linear infinite;}
+#move-hint,#grab-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.55rem;
+  opacity:0;transition:opacity .4s;text-align:center;}
+#move-hint.show,#grab-hint.show{opacity:1;}
+.move-ring{width:50px;height:50px;border-radius:50%;border:2px dashed var(--neon);animation:spin 3s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-.move-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:1.3rem;}
-.move-lbl{font-family:'Space Mono',monospace;font-size:.53rem;color:var(--neon);letter-spacing:1.2px;max-width:200px;line-height:1.8;}
+.move-icon,.grab-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:1.15rem;}
+.grab-ring{width:54px;height:54px;border-radius:50%;border:2px solid var(--neon);
+  box-shadow:0 0 14px rgba(0,200,150,.32);animation:gpulse 1s ease-in-out infinite;}
+@keyframes gpulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.92);}}
+.hint-lbl{font-family:'Space Mono',monospace;font-size:.5rem;color:var(--neon);
+  letter-spacing:1px;max-width:190px;line-height:1.8;}
 
-#grabbed-indicator{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:none;flex-direction:column;align-items:center;gap:.6rem;}
-#grabbed-indicator.show{display:flex;}
-.grab-ring{width:60px;height:60px;border-radius:50%;border:2px solid var(--neon);box-shadow:0 0 20px rgba(0,255,178,.4);animation:grab-pulse 1s ease-in-out infinite;}
-@keyframes grab-pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.6;transform:scale(.94);}}
-.grab-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:1.2rem;}
-.grab-lbl{font-family:'Space Mono',monospace;font-size:.53rem;color:var(--neon);letter-spacing:1.2px;}
+/* ── PRICE TAG OVERLAY (DOM sprite above placed objects) ── */
+.price-tag{
+  position:fixed;pointer-events:all;
+  transform:translate(-50%,-100%);
+  background:var(--glass);backdrop-filter:blur(12px);
+  border:1px solid var(--border);border-radius:12px;
+  padding:.42rem .65rem;display:flex;flex-direction:column;align-items:center;gap:.18rem;
+  opacity:0;transition:opacity .2s;cursor:pointer;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);
+  min-width:110px;
+}
+.price-tag.show{opacity:1;}
+.price-tag::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
+  border-top:6px solid rgba(10,13,16,.88);}
+.ptag-name{font-size:.62rem;font-weight:700;color:#fff;text-align:center;line-height:1.2;white-space:nowrap;}
+.ptag-price{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--gold);font-weight:700;}
+.ptag-dims{font-family:'Space Mono',monospace;font-size:.44rem;color:rgba(255,255,255,.38);
+  letter-spacing:.5px;text-align:center;}
+
+/* ── PRODUCT PANEL (bottom sheet after tap on price tag) ── */
+#prod-panel{
+  pointer-events:all;position:absolute;bottom:9.5rem;left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--glass);backdrop-filter:blur(18px);
+  border:1px solid var(--border);border-radius:20px;
+  padding:.9rem 1rem;width:min(300px, calc(100vw - 2rem));
+  display:none;flex-direction:column;gap:.55rem;
+  opacity:0;transition:all .28s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+#prod-panel.show{display:flex;transform:translateX(-50%) translateY(0);opacity:1;}
+.panel-row{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;}
+.panel-name{font-size:.88rem;font-weight:700;line-height:1.2;flex:1;}
+.panel-price{font-family:'Space Mono',monospace;font-size:.78rem;color:var(--gold);font-weight:700;flex-shrink:0;}
+.panel-dims{font-family:'Space Mono',monospace;font-size:.48rem;color:rgba(255,255,255,.38);letter-spacing:.8px;}
+.panel-close{position:absolute;top:.6rem;right:.6rem;width:22px;height:22px;border-radius:50%;
+  background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.45);
+  font-size:.68rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  touch-action:manipulation;}
+/* Variants */
+.var-row{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;}
+.var-lbl{font-family:'Space Mono',monospace;font-size:.44rem;color:rgba(255,255,255,.3);letter-spacing:1px;margin-right:.15rem;}
+.var-dot{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;
+  transition:all .18s;touch-action:manipulation;flex-shrink:0;}
+.var-dot.on{border-color:#fff;transform:scale(1.18);}
+.var-dot:active{transform:scale(.9);}
+/* Action buttons */
+.panel-actions{display:flex;gap:.45rem;}
+.pact-btn{flex:1;padding:.48rem .3rem;border-radius:11px;border:none;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:.7rem;cursor:pointer;
+  transition:all .18s;touch-action:manipulation;display:flex;align-items:center;
+  justify-content:center;gap:.3rem;}
+.pact-btn:active{transform:scale(.93);}
+.pact-btn.cart{background:var(--neon);color:#000;}
+.pact-btn.wish{background:rgba(255,92,92,.12);color:var(--red);border:1px solid rgba(255,92,92,.25);}
+.pact-btn.wish.saved{background:var(--red);color:#fff;}
+/* Share row */
+.share-row{display:flex;gap:.4rem;}
+.share-btn{flex:1;padding:.38rem .2rem;border-radius:10px;border:1px solid var(--border);
+  background:rgba(255,255,255,.04);color:rgba(255,255,255,.6);font-family:'Space Mono',monospace;
+  font-size:.46rem;cursor:pointer;transition:all .18s;touch-action:manipulation;
+  display:flex;align-items:center;justify-content:center;gap:.25rem;letter-spacing:.5px;}
+.share-btn:active{transform:scale(.93);}
+.share-btn.fb{border-color:rgba(24,119,242,.4);color:#4a90d9;}
+.share-btn.msg{border-color:rgba(0,132,255,.4);color:#0084ff;}
+.share-btn.copy{border-color:rgba(255,255,255,.15);color:rgba(255,255,255,.5);}
 
 /* RAIL */
-#rail{pointer-events:all;position:absolute;right:.9rem;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:.5rem;}
-.rb{width:46px;height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(7,10,14,.85);backdrop-filter:blur(10px);color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;transition:all .18s;}
-.rb:active{transform:scale(.9);}
+#rail{pointer-events:all;position:absolute;right:.75rem;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:.42rem;}
+.rb{width:42px;height:42px;border-radius:11px;border:1px solid var(--border);
+  background:var(--glass);backdrop-filter:blur(10px);color:#fff;font-size:.9rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;touch-action:manipulation;transition:all .16s;
+  position:relative;}
+.rb:active{transform:scale(.88);}
 .rb:hover{border-color:var(--neon);}
-.rb.red:hover{border-color:var(--red);}
-.rl{font-family:'Space Mono',monospace;font-size:.42rem;color:rgba(255,255,255,.25);text-align:center;margin-top:-.25rem;}
+.rb.danger:hover{border-color:var(--red);}
+.rl{font-family:'Space Mono',monospace;font-size:.37rem;color:rgba(255,255,255,.2);
+  text-align:center;margin-top:-.18rem;letter-spacing:.3px;}
+.rb-badge{position:absolute;top:-.28rem;right:-.28rem;width:14px;height:14px;
+  background:var(--red);border-radius:50%;font-family:'Space Mono',monospace;
+  font-size:.4rem;color:#fff;display:none;align-items:center;justify-content:center;}
+.rb-badge.show{display:flex;}
 
 /* TRAY */
-#tray{pointer-events:all;position:absolute;bottom:0;left:0;right:0;padding:.8rem 1rem calc(env(safe-area-inset-bottom,0px) + 1rem);background:linear-gradient(to top,rgba(7,10,14,.96) 55%,transparent);}
-.tray-hd{display:flex;justify-content:space-between;margin-bottom:.5rem;}
-.tray-lbl{font-family:'Space Mono',monospace;font-size:.52rem;color:rgba(255,255,255,.28);letter-spacing:3px;}
-#pcnt-lbl{font-family:'Space Mono',monospace;font-size:.52rem;color:rgba(255,255,255,.28);}
+#tray{pointer-events:all;position:absolute;bottom:0;left:0;right:0;
+  padding:.7rem .85rem calc(env(safe-area-inset-bottom,0px) + .85rem);
+  background:linear-gradient(to top,rgba(10,13,16,.97) 52%,transparent);}
+.tray-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:.42rem;}
+.tray-lbl{font-family:'Space Mono',monospace;font-size:.46rem;color:rgba(255,255,255,.22);letter-spacing:3px;}
+#pcnt-lbl{font-family:'Space Mono',monospace;font-size:.46rem;color:rgba(255,255,255,.22);}
 #pcnt-lbl span{color:var(--neon);font-weight:700;}
-#cards{display:flex;gap:.5rem;overflow-x:auto;scrollbar-width:none;}
+#cards{display:flex;gap:.42rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.05rem;}
 #cards::-webkit-scrollbar{display:none;}
-.card{flex-shrink:0;width:68px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:13px;padding:.45rem .35rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.28rem;touch-action:manipulation;transition:all .2s cubic-bezier(.34,1.56,.64,1);}
-.card:active{transform:scale(.9);}
-.card.sel{border-color:var(--neon);background:rgba(0,255,178,.07);transform:translateY(-4px);box-shadow:0 0 18px rgba(0,255,178,.16);}
-.card .em{font-size:1.4rem;line-height:1;}
-.card .nm{font-family:'Space Mono',monospace;font-size:.48rem;color:rgba(255,255,255,.45);text-align:center;}
-.card.sel .nm{color:var(--neon);}
+.card{flex-shrink:0;width:70px;background:rgba(255,255,255,.04);border:1px solid var(--border);
+  border-radius:12px;padding:.38rem .28rem;cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;gap:.2rem;touch-action:manipulation;position:relative;
+  transition:all .2s cubic-bezier(.34,1.56,.64,1);}
+.card:active{transform:scale(.88);}
+.card.sel{border-color:var(--neon);background:rgba(0,200,150,.07);
+  transform:translateY(-4px);box-shadow:0 0 14px rgba(0,200,150,.13);}
+.card .cem{font-size:1.35rem;line-height:1;}
+.card .cnm{font-family:'Space Mono',monospace;font-size:.4rem;color:rgba(255,255,255,.38);
+  text-align:center;line-height:1.25;}
+.card .cpr{font-family:'Space Mono',monospace;font-size:.42rem;color:var(--gold);}
+.card.sel .cnm{color:var(--neon);}
+.card-surface{position:absolute;top:3px;right:4px;font-size:.55rem;opacity:.5;}
+.card-wish{position:absolute;top:2px;left:4px;font-size:.55rem;display:none;}
+.card-wish.show{display:block;}
 
-#enter-ar{pointer-events:all;position:absolute;bottom:9rem;left:50%;transform:translateX(-50%);background:var(--neon);color:#000;border:none;border-radius:99px;padding:.85rem 2rem;font-family:'Syne',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;box-shadow:0 0 32px rgba(0,255,178,.4);transition:all .25s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:.45rem;white-space:nowrap;touch-action:manipulation;}
+/* ENTER AR */
+#enter-ar{pointer-events:all;position:absolute;bottom:9rem;left:50%;transform:translateX(-50%);
+  background:var(--neon);color:#000;border:none;border-radius:99px;
+  padding:.8rem 1.75rem;font-family:'Syne',sans-serif;font-weight:800;font-size:.85rem;
+  cursor:pointer;box-shadow:0 0 26px rgba(0,200,150,.38);
+  transition:all .22s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;
+  gap:.4rem;white-space:nowrap;touch-action:manipulation;}
 #enter-ar:hover{transform:translateX(-50%) scale(1.04);}
-#enter-ar:active{transform:translateX(-50%) scale(.95);}
+#enter-ar:active{transform:translateX(-50%) scale(.94);}
 #enter-ar.gone{display:none;}
-#enter-ar.na{background:rgba(255,45,107,.12);color:var(--red);border:1px solid rgba(255,45,107,.35);box-shadow:none;}
+#enter-ar.na{background:rgba(255,92,92,.1);color:var(--red);
+  border:1px solid rgba(255,92,92,.28);box-shadow:none;}
 
-#toast{position:fixed;bottom:8.5rem;left:50%;transform:translateX(-50%) translateY(8px);font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:1px;color:var(--neon);background:rgba(0,255,178,.1);border:1px solid rgba(0,255,178,.3);border-radius:99px;padding:.4rem 1rem;white-space:nowrap;pointer-events:none;z-index:9999;opacity:0;transition:all .22s;}
+/* TOAST */
+#toast{position:fixed;bottom:8rem;left:50%;transform:translateX(-50%) translateY(8px);
+  font-family:'Space Mono',monospace;font-size:.56rem;letter-spacing:.8px;color:var(--neon);
+  background:rgba(0,200,150,.1);border:1px solid rgba(0,200,150,.25);border-radius:99px;
+  padding:.36rem .85rem;white-space:nowrap;pointer-events:none;z-index:9999;
+  opacity:0;transition:all .2s;}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
 
-body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;background:repeating-linear-gradient(to bottom,transparent 0,transparent 3px,rgba(0,0,0,.018) 3px,rgba(0,0,0,.018) 4px);}
+/* FLASH */
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9990;transition:opacity .07s;}
+
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;
+  background:repeating-linear-gradient(to bottom,transparent 0,transparent 3px,rgba(0,0,0,.014) 3px,rgba(0,0,0,.014) 4px);}
 </style>
 </head>
 <body>
 
 <div id="loader">
-  <h1>AR ZONE</h1>
-  <p>SPATIAL ENGINE</p>
+  <div class="brand">MIRA-E</div>
+  <h1>AR Zone</h1>
+  <sub>SPATIAL PREVIEW ENGINE</sub>
   <div class="lbar"><div class="lbar-fill" id="lfill"></div></div>
 </div>
 
 <div id="hud">
+
   <div id="topbar">
-    <div class="logo">AR <b>ZONE</b></div>
-    <div id="surf-type"></div>
-    <div class="badge" id="badge">● READY</div>
+    <div class="logo-col">
+      <span class="logo-brand">MIRA-E</span>
+      <span class="logo-title">AR <b>ZONE</b></span>
+    </div>
+    <div id="surf-pill"></div>
+    <div id="ar-pill">● READY</div>
   </div>
-  <div id="status-wrap"><span id="status-text">SELECT A MODEL · TAP ENTER AR</span></div>
+
+  <div id="status-wrap"><span id="status-txt">SELECT A PRODUCT · TAP ENTER AR</span></div>
 
   <div id="mode-pill">
     <button class="mpb on" id="mp-place">＋ PLACE</button>
@@ -135,47 +271,79 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;b
       <div class="ring r3"></div><div class="ring r2"></div><div class="ring r1"></div>
       <div class="ch"></div>
     </div>
-    <div class="scan-lbl">POINT AT ANY SURFACE<br>FLOOR · WALL · CEILING</div>
+    <div class="scan-lbl">POINT AT FLOOR · WALL · CEILING<br>SLOWLY SWEEP TO SCAN</div>
   </div>
 
   <div id="tap-hint">
-    <div style="position:relative;width:52px;height:52px;">
+    <div style="position:relative;width:46px;height:46px;">
       <div class="tap-ring"></div><div class="tap-icon">👆</div>
     </div>
-    <div class="tap-lbl" id="tap-lbl-text" style="color:var(--neon);">TAP TO PLACE</div>
+    <div class="tap-lbl">TAP TO PLACE</div>
   </div>
 
   <div id="move-hint">
-    <div style="position:relative;width:56px;height:56px;">
+    <div style="position:relative;width:50px;height:50px;">
       <div class="move-ring"></div><div class="move-icon">✥</div>
     </div>
-    <div class="move-lbl">POINT AT OBJECT<br>TAP TO GRAB</div>
+    <div class="hint-lbl">POINT AT ITEM · TAP TO GRAB</div>
   </div>
 
-  <div id="grabbed-indicator">
-    <div style="position:relative;width:60px;height:60px;">
+  <div id="grab-hint">
+    <div style="position:relative;width:54px;height:54px;">
       <div class="grab-ring"></div><div class="grab-icon">✊</div>
     </div>
-    <div class="grab-lbl">MOVE PHONE · TAP TO DROP</div>
+    <div class="hint-lbl">MOVE PHONE · TAP TO DROP</div>
   </div>
 
+  <!-- Rail -->
   <div id="rail">
     <div><button class="rb" id="b-undo">↩</button><div class="rl">UNDO</div></div>
+    <div><button class="rb" id="b-rl">↺</button><div class="rl">ROTATE</div></div>
+    <div><button class="rb" id="b-rr">↻</button><div class="rl">ROTATE</div></div>
     <div><button class="rb" id="b-up">⊕</button><div class="rl">BIGGER</div></div>
     <div><button class="rb" id="b-dn">⊖</button><div class="rl">SMALLER</div></div>
-    <div><button class="rb red" id="b-clr">✕</button><div class="rl">CLEAR</div></div>
+    <div><button class="rb" id="b-cam">📸</button><div class="rl">PHOTO</div></div>
+    <div>
+      <button class="rb danger" id="b-clr">✕</button><div class="rl">CLEAR</div>
+    </div>
   </div>
 
+  <!-- Product panel -->
+  <div id="prod-panel">
+    <button class="panel-close" id="panel-close">✕</button>
+    <div class="panel-row">
+      <div>
+        <div class="panel-name" id="panel-name">—</div>
+        <div class="panel-dims" id="panel-dims">—</div>
+      </div>
+      <div class="panel-price" id="panel-price">—</div>
+    </div>
+    <div class="var-row">
+      <span class="var-lbl">FINISH</span>
+      <div id="var-wrap"></div>
+    </div>
+    <div class="panel-actions">
+      <button class="pact-btn cart" id="btn-cart">🛒 Add to Cart</button>
+      <button class="pact-btn wish" id="btn-wish">♡ Wishlist</button>
+    </div>
+    <div class="share-row">
+      <button class="share-btn fb"  id="btn-fb">  <span>f</span> Facebook</button>
+      <button class="share-btn msg" id="btn-msg"> <span>✈</span> Messenger</button>
+      <button class="share-btn copy" id="btn-copy">🔗 Copy Link</button>
+    </div>
+  </div>
+
+  <!-- Tray -->
   <div id="tray">
     <div class="tray-hd">
-      <div class="tray-lbl">MODEL</div>
+      <div class="tray-lbl">PRODUCTS</div>
       <div id="pcnt-lbl">PLACED <span id="pcnt">0</span></div>
     </div>
     <div id="cards"></div>
   </div>
 
   <button id="enter-ar">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
       <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
     </svg>
     ENTER AR
@@ -183,147 +351,273 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;b
 </div>
 
 <div id="toast"></div>
+<div id="flash"></div>
+
+<!-- Price tags are injected here by JS -->
 
 <script>
-(function(){
+(async function(){
 'use strict';
 
-// ── MODELS ──────────────────────────────────────────────────────
-var MODELS=[
-  {id:'cube',   name:'Cube',   em:'📦', fn:mkCube},
-  {id:'sphere', name:'Sphere', em:'🔮', fn:mkSphere},
-  {id:'torus',  name:'Torus',  em:'🍩', fn:mkTorus},
-  {id:'rocket', name:'Rocket', em:'🚀', fn:mkRocket},
-  {id:'gem',    name:'Crystal',em:'💎', fn:mkGem},
-  {id:'pyra',   name:'Pyramid',em:'🔺', fn:mkPyramid},
-  {id:'tree',   name:'Tree',   em:'🌲', fn:mkTree},
-  {id:'ring',   name:'Ring',   em:'💍', fn:mkRing},
+// ─────────────────────────────────────────────────────────────────
+// PRODUCT CATALOG
+// glbUrl: free CC0/CC-BY GLBs from Khronos Sample Assets on GitHub
+// null glbUrl = procedural Three.js fallback model
+// ─────────────────────────────────────────────────────────────────
+var CATALOG = [
+  {
+    id:'chair', em:'🪑', name:'Rattan Armchair', price:'₱4,500',
+    dims:'W:65 · D:70 · H:88 cm', surface:'floor',
+    glbUrl:'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/SheenChair/glTF-Binary/SheenChair.glb',
+    baseScale:.55,
+    variants:[{name:'Natural',hex:'#C8A46E'},{name:'Espresso',hex:'#3B1F0A'},{name:'White',hex:'#F0EDE8'}]
+  },
+  {
+    id:'sofa', em:'🛋️', name:'Rattan 3-Seater Sofa', price:'₱12,800',
+    dims:'W:180 · D:82 · H:85 cm', surface:'floor',
+    glbUrl:'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/SheenChair/glTF-Binary/SheenChair.glb',
+    baseScale:1.1,
+    variants:[{name:'Beige',hex:'#D4C4A8'},{name:'Teal',hex:'#3D8C8C'},{name:'Rust',hex:'#B04A28'}]
+  },
+  {
+    id:'table', em:'🪵', name:'Rattan Coffee Table', price:'₱3,200',
+    dims:'W:90 · D:50 · H:45 cm', surface:'floor',
+    glbUrl:null, baseScale:1.0,
+    variants:[{name:'Natural',hex:'#C8A46E'},{name:'Walnut',hex:'#3E1C08'}]
+  },
+  {
+    id:'shelf', em:'📚', name:'Rattan Wall Shelf', price:'₱2,100',
+    dims:'W:80 · D:20 · H:30 cm', surface:'wall',
+    glbUrl:null, baseScale:.9,
+    variants:[{name:'Natural',hex:'#C8A46E'},{name:'Black',hex:'#1A1A1A'}]
+  },
+  {
+    id:'lamp', em:'💡', name:'Rattan Pendant Lamp', price:'₱1,800',
+    dims:'Ø:40 · H:35 cm', surface:'ceiling',
+    glbUrl:'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/AnisotropyBarnLamp/glTF-Binary/AnisotropyBarnLamp.glb',
+    baseScale:.45,
+    variants:[{name:'Natural',hex:'#C8A46E'},{name:'Bleached',hex:'#EDE8D5'}]
+  },
+  {
+    id:'basket', em:'🧺', name:'Rattan Storage Basket', price:'₱850',
+    dims:'Ø:35 · H:30 cm', surface:'floor',
+    glbUrl:null, baseScale:.8,
+    variants:[{name:'Natural',hex:'#C8A46E'},{name:'Dark',hex:'#3B1F0A'}]
+  },
+  {
+    id:'mirror', em:'🪞', name:'Rattan Wall Mirror', price:'₱2,600',
+    dims:'Ø:60 cm', surface:'wall',
+    glbUrl:null, baseScale:1.0,
+    variants:[{name:'Natural',hex:'#C8A46E'},{name:'Gold',hex:'#B8960C'}]
+  },
+  {
+    id:'stool', em:'🪑', name:'Rattan Bar Stool', price:'₱1,900',
+    dims:'W:40 · D:40 · H:75 cm', surface:'floor',
+    glbUrl:null, baseScale:.75,
+    variants:[{name:'Natural',hex:'#C8A46E'},{name:'Black',hex:'#1A1A1A'}]
+  }
 ];
-function mat(c,m,r,x){return new THREE.MeshStandardMaterial(Object.assign({color:c,metalness:m||0,roughness:r||.5},x||{}));}
-function mkCube(){var g=new THREE.Group();var m=new THREE.Mesh(new THREE.BoxGeometry(.18,.18,.18),mat(0x5599ff,.4,.3));m.position.y=.09;m.castShadow=true;g.add(m);return g;}
-function mkSphere(){var g=new THREE.Group();var m=new THREE.Mesh(new THREE.SphereGeometry(.1,32,32),mat(0xff44cc,.7,.15));m.position.y=.1;m.castShadow=true;g.add(m);return g;}
-function mkTorus(){var g=new THREE.Group();var m=new THREE.Mesh(new THREE.TorusGeometry(.1,.036,16,48),mat(0x44ffaa,.5,.2));m.rotation.x=Math.PI/2;m.position.y=.04;m.castShadow=true;g.add(m);return g;}
-function mkRocket(){
-  var g=new THREE.Group();
-  var body=new THREE.Mesh(new THREE.CylinderGeometry(.032,.032,.15,12),mat(0xff8833,.5,.25));body.position.y=.105;body.castShadow=true;g.add(body);
-  var nose=new THREE.Mesh(new THREE.ConeGeometry(.032,.08,12),mat(0xffffff,.2,.5));nose.position.y=.215;nose.castShadow=true;g.add(nose);
-  [-1,1].forEach(function(s){var f=new THREE.Mesh(new THREE.BoxGeometry(.007,.052,.045),mat(0xff3333));f.position.set(s*.042,.048,0);f.castShadow=true;g.add(f);});
-  return g;
-}
-function mkGem(){var g=new THREE.Group();var m=new THREE.Mesh(new THREE.OctahedronGeometry(.11,0),mat(0x99bbff,.95,.02,{transparent:true,opacity:.82}));m.position.y=.11;m.castShadow=true;g.add(m);return g;}
-function mkPyramid(){var g=new THREE.Group();var m=new THREE.Mesh(new THREE.ConeGeometry(.12,.2,4),mat(0xffdd44,.25,.45));m.position.y=.1;m.castShadow=true;g.add(m);return g;}
-function mkTree(){
-  var g=new THREE.Group();
-  var trunk=new THREE.Mesh(new THREE.CylinderGeometry(.016,.02,.08,8),mat(0x8B5E3C));trunk.position.y=.04;g.add(trunk);
-  [[.09,.13,.09,0x236b3a],[.075,.1,.16,0x2f9650],[.055,.08,.22,0x44bb66]].forEach(function(l){var c=new THREE.Mesh(new THREE.ConeGeometry(l[0],l[1],8),mat(l[3]));c.position.y=l[2];c.castShadow=true;g.add(c);});
-  return g;
-}
-function mkRing(){
-  var g=new THREE.Group();
-  var r=new THREE.Mesh(new THREE.TorusGeometry(.08,.016,12,40),mat(0xffcc44,.92,.04));r.rotation.x=Math.PI/2;r.position.y=.016;g.add(r);
-  var gem=new THREE.Mesh(new THREE.OctahedronGeometry(.024),mat(0x55aaff,.85,.02));gem.position.y=.085;g.add(gem);
-  return g;
-}
 
-function setHighlight(obj,on){
-  obj.traverse(function(child){
-    if(!child.isMesh)return;
-    if(on){
-      if(!child.userData._origEm){child.userData._origEm=child.material.emissive?child.material.emissive.clone():new THREE.Color(0,0,0);child.userData._origEi=child.material.emissiveIntensity||0;}
-      child.material=child.material.clone();child.material.emissive=new THREE.Color(0x00ffb2);child.material.emissiveIntensity=.4;
-    } else {
-      if(child.userData._origEm){child.material=child.material.clone();child.material.emissive=child.userData._origEm;child.material.emissiveIntensity=child.userData._origEi;}
-    }
+// ─────────────────────────────────────────────────────────────────
+// PROCEDURAL MODELS (fallback when glbUrl is null or fails to load)
+// ─────────────────────────────────────────────────────────────────
+function rMat(hex){
+  return new THREE.MeshStandardMaterial({
+    color:new THREE.Color(hex||'#C8A46E'),metalness:.05,roughness:.85
   });
 }
+var PROC = {
+  table:function(hex){
+    var g=new THREE.Group();
+    g.add(mesh(new THREE.BoxGeometry(.9,.04,.5),rMat(hex),0,.44,0));
+    [[-.38,-.21],[.38,-.21],[-.38,.21],[.38,.21]].forEach(function(xz){
+      g.add(mesh(new THREE.CylinderGeometry(.022,.022,.44,8),rMat(hex),xz[0],.22,xz[1]));
+    });
+    return g;
+  },
+  shelf:function(hex){
+    var g=new THREE.Group();
+    g.add(mesh(new THREE.BoxGeometry(.8,.032,.2),rMat(hex),0,0,0));
+    g.add(mesh(new THREE.BoxGeometry(.72,.18,.025),rMat(hex),0,.09,-.09));
+    return g;
+  },
+  basket:function(hex){
+    var g=new THREE.Group();
+    g.add(mesh(new THREE.CylinderGeometry(.155,.12,.28,16),rMat(hex),0,.14,0));
+    g.add(mesh(new THREE.TorusGeometry(.155,.013,8,24),rMat(hex),0,.28,0));
+    return g;
+  },
+  mirror:function(hex){
+    var g=new THREE.Group();
+    g.add(mesh(new THREE.TorusGeometry(.28,.034,10,40),rMat(hex),0,0,0));
+    g.add(mesh(new THREE.CircleGeometry(.245,32),
+      new THREE.MeshStandardMaterial({color:0x99ccff,metalness:.9,roughness:.05,transparent:true,opacity:.28}),
+      0,0,.012));
+    return g;
+  },
+  stool:function(hex){
+    var g=new THREE.Group();
+    g.add(mesh(new THREE.CylinderGeometry(.175,.175,.038,16),rMat(hex),0,.73,0));
+    g.add(mesh(new THREE.CylinderGeometry(.024,.024,.73,8),
+      new THREE.MeshStandardMaterial({color:0x888888,metalness:.6,roughness:.3}),0,.365,0));
+    g.add(mesh(new THREE.CylinderGeometry(.175,.175,.028,16),
+      new THREE.MeshStandardMaterial({color:0x555555,metalness:.5,roughness:.4}),0,.014,0));
+    return g;
+  },
+  lamp:function(hex){
+    var g=new THREE.Group();
+    g.add(mesh(new THREE.ConeGeometry(.18,.24,16,1,true),rMat(hex),0,-.1,0));
+    g.add(mesh(new THREE.CylinderGeometry(.005,.005,.28,6),
+      new THREE.MeshStandardMaterial({color:0x333333}),0,.14,0));
+    g.add(mesh(new THREE.SphereGeometry(.034,12,12),
+      new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffffaa,emissiveIntensity:.9}),0,-.04,0));
+    return g;
+  }
+};
+function mesh(geo,mat,x,y,z){
+  var m=new THREE.Mesh(geo,mat);m.position.set(x||0,y||0,z||0);m.castShadow=true;return m;
+}
 
-// ── STATE ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────
 var scene,camera,renderer;
-var reticleFloor,reticleWall,reticleCeiling; // 3 reticles, one shown per surface type
-var selId=MODELS[0].id;
-var placed=[];
-var userScale=1.0;
-var surfaceFound=false;
-var mode='place';
+var reticles={floor:null,wall:null,ceiling:null};
+var selId=CATALOG[0].id;
+var placed=[];       // {mesh, prod, surfType, rotY, tag (DOM el), varIdx}
+var activeItem=null; // item currently shown in panel / price tag focused
 var grabbedObj=null;
-
-var xrSession=null;
-var xrRefSpace=null;
-
-// THREE hit-test sources for different ray directions
-var hitSrcCenter=null;   // straight ahead  → walls
-var hitSrcDown=null;     // angled down      → floors
-var hitSrcUp=null;       // angled up        → ceilings
-
-// Current best hit result
-var lastHitPos=null;       // THREE.Vector3
-var lastHitNormal=null;    // THREE.Vector3 — surface normal from hit matrix
-var lastSurfaceType='floor'; // 'floor' | 'wall' | 'ceiling'
-var lastHitMatrix4=null;    // THREE.Matrix4
-
+var userScale=1.0;
+var mode='place';
+var surfaceFound=false;
+var lastHitPos=null,lastHitMat4=null,lastSurfType='floor';
+var wishlistSet={};  // id→bool
+var cartItems=[];
+var xrSession=null,xrRefSpace=null;
+var hitSrc={center:null,down:null,up:null};
+var GLTFLoader=null,modelCache={};
 var prevObjs=[],prevActive=false,prevRAF=null;
 
-// ── SCENE INIT ─────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// SCENE INIT
+// ─────────────────────────────────────────────────────────────────
 function initScene(){
   scene=new THREE.Scene();
   camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.005,50);
-  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.setSize(innerWidth,innerHeight);
   renderer.xr.enabled=true;
   renderer.shadowMap.enabled=true;
-  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.domElement.style.cssText='position:fixed;inset:0;z-index:1;';
   document.body.insertBefore(renderer.domElement,document.getElementById('hud'));
 
-  scene.add(new THREE.AmbientLight(0xffffff,.75));
-  var sun=new THREE.DirectionalLight(0xffffff,1.2);sun.position.set(2,4,2);sun.castShadow=true;scene.add(sun);
-  scene.add(new THREE.HemisphereLight(0xffffff,0x444444,.35));
+  scene.add(new THREE.AmbientLight(0xffffff,.8));
+  var sun=new THREE.DirectionalLight(0xffffff,1.1);
+  sun.position.set(2,4,2);sun.castShadow=true;scene.add(sun);
+  scene.add(new THREE.HemisphereLight(0xffffff,0x443322,.38));
 
-  buildReticles();
-  window.addEventListener('resize',function(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+  // Reticles
+  reticles.floor  =makeReticle(0x00C896);
+  reticles.wall   =makeReticle(0xFFB830);
+  reticles.ceiling=makeReticle(0x6AB0FF);
+
+  loadGLTFLoader();
+  window.addEventListener('resize',onResize);
 }
-
+function onResize(){
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+  // Reproject all price tags
+  placed.forEach(function(item){updateTagPos(item);});
+}
 function makeReticle(color){
-  var g=new THREE.Group();
-  g.matrixAutoUpdate=false;g.visible=false;
-  g.add(new THREE.Mesh(new THREE.RingGeometry(.07,.085,40).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:color,side:THREE.DoubleSide,depthWrite:false})));
-  g.add(new THREE.Mesh(new THREE.CircleGeometry(.01,20).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:color,side:THREE.DoubleSide,depthWrite:false})));
-  var blob=new THREE.Mesh(new THREE.CircleGeometry(.09,32).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.18,side:THREE.DoubleSide,depthWrite:false}));
+  var g=new THREE.Group();g.matrixAutoUpdate=false;g.visible=false;
+  g.add(new THREE.Mesh(
+    new THREE.RingGeometry(.07,.086,40).rotateX(-Math.PI/2),
+    new THREE.MeshBasicMaterial({color:color,side:THREE.DoubleSide,depthWrite:false})));
+  g.add(new THREE.Mesh(
+    new THREE.CircleGeometry(.009,20).rotateX(-Math.PI/2),
+    new THREE.MeshBasicMaterial({color:color,side:THREE.DoubleSide,depthWrite:false})));
+  var blob=new THREE.Mesh(
+    new THREE.CircleGeometry(.09,32).rotateX(-Math.PI/2),
+    new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.16,side:THREE.DoubleSide,depthWrite:false}));
   blob.position.y=-.001;g.add(blob);
-  scene.add(g);
-  return g;
+  scene.add(g);return g;
+}
+function hideReticles(){Object.values(reticles).forEach(function(r){r.visible=false;});}
+
+// ─────────────────────────────────────────────────────────────────
+// GLTF LOADER
+// ─────────────────────────────────────────────────────────────────
+function loadGLTFLoader(){
+  var s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
+  s.onload=function(){GLTFLoader=THREE.GLTFLoader;};
+  document.head.appendChild(s);
 }
 
-function buildReticles(){
-  reticleFloor   =makeReticle(0x00FFB2); // green  — floor
-  reticleWall    =makeReticle(0xFF8C00); // orange — wall
-  reticleCeiling =makeReticle(0x4488FF); // blue   — ceiling
+function loadModel(prod,cb){
+  var hex=prod.variants[0].hex;
+  if(!prod.glbUrl){cb(buildProc(prod,hex));return;}
+  if(modelCache[prod.id]){cb(cloneModel(modelCache[prod.id]));return;}
+  if(!GLTFLoader){cb(buildProc(prod,hex));return;}
+  var loader=new GLTFLoader();
+  loader.load(prod.glbUrl,function(gltf){
+    var mdl=gltf.scene;
+    // Normalise to ~0.3m max dimension
+    var box=new THREE.Box3().setFromObject(mdl);
+    var sz=new THREE.Vector3();box.getSize(sz);
+    mdl.scale.setScalar(.3/Math.max(sz.x,sz.y,sz.z));
+    // Sit on surface
+    box.setFromObject(mdl);
+    mdl.position.y=-box.min.y;
+    var wrap=new THREE.Group();wrap.add(mdl);
+    modelCache[prod.id]=wrap;
+    cb(cloneModel(wrap));
+  },undefined,function(){cb(buildProc(prod,hex));});
+}
+function cloneModel(g){return g.clone(true);}
+function buildProc(prod,hex){
+  var builder=PROC[prod.id]||PROC.basket;
+  return builder(hex);
 }
 
-function hideAllReticles(){
-  reticleFloor.visible=false;
-  reticleWall.visible=false;
-  reticleCeiling.visible=false;
-}
-
-// ── PREVIEW ─────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// PREVIEW
+// ─────────────────────────────────────────────────────────────────
 function startPreview(){
   prevActive=true;
-  MODELS.forEach(function(m,i){var obj=m.fn();var a=(i/MODELS.length)*Math.PI*2;obj.position.set(Math.cos(a)*1.3,-.5,Math.sin(a)*1.3-4);obj.scale.setScalar(.8);scene.add(obj);prevObjs.push(obj);});
+  CATALOG.forEach(function(p,i){
+    var a=(i/CATALOG.length)*Math.PI*2;
+    loadModel(p,function(obj){
+      if(!prevActive)return;
+      obj.position.set(Math.cos(a)*1.3,-.5,Math.sin(a)*1.3-4);
+      obj.scale.setScalar((p.baseScale||1)*.55);
+      scene.add(obj);prevObjs.push(obj);
+    });
+  });
   camera.position.set(0,0,0);camera.lookAt(0,-.5,-4);
   var t=0;
-  function loop(){if(!prevActive)return;prevRAF=requestAnimationFrame(loop);t+=.005;prevObjs.forEach(function(o,i){o.rotation.y+=.01;o.position.y=-.5+Math.sin(t+i*.8)*.08;});renderer.render(scene,camera);}
+  function loop(){
+    if(!prevActive)return;
+    prevRAF=requestAnimationFrame(loop);
+    t+=.005;
+    prevObjs.forEach(function(o,i){o.rotation.y+=.007;o.position.y=-.5+Math.sin(t+i*.7)*.07;});
+    renderer.render(scene,camera);
+  }
   loop();
 }
-function stopPreview(){prevActive=false;if(prevRAF){cancelAnimationFrame(prevRAF);prevRAF=null;}prevObjs.forEach(function(o){scene.remove(o);});prevObjs=[];}
+function stopPreview(){
+  prevActive=false;
+  if(prevRAF){cancelAnimationFrame(prevRAF);prevRAF=null;}
+  prevObjs.forEach(function(o){scene.remove(o);});
+  prevObjs=[];
+}
 
-// ── AR SESSION ───────────────────────────────────────────────
-// We request THREE hit-test sources with offset rays:
-//   1. Straight ahead (direction: 0,0,-1) — catches walls
-//   2. Angled 45° down (direction: 0,-0.7,-0.7 normalised) — catches floors
-//   3. Angled 45° up  (direction: 0,+0.7,-0.7 normalised) — catches ceilings
-// Each frame we pick the hit result closest to the camera's look direction's surface type.
+// ─────────────────────────────────────────────────────────────────
+// AR SESSION
+// ─────────────────────────────────────────────────────────────────
 function enterAR(){
   if(!navigator.xr){toast('WebXR not supported');return;}
   navigator.xr.requestSession('immersive-ar',{
@@ -334,219 +628,166 @@ function enterAR(){
     xrSession=session;
     renderer.xr.setReferenceSpaceType('local');
     renderer.xr.setSession(session).then(function(){
-      session.requestReferenceSpace('local').then(function(localSpace){
-        xrRefSpace=localSpace;
-        session.requestReferenceSpace('viewer').then(function(viewerSpace){
-
-          // Request three hit-test sources with different offset rays
-          var srcCenter,srcDown,srcUp;
-
-          // 1. Straight ahead — good for walls
-          session.requestHitTestSourceWithOFFSETRay
-            ? void 0
-            : null; // not all browsers support offsetRay — we use plain viewer space and rely on camera tilt
-
-          // We use a single hit-test source from viewer space.
-          // The viewer space already points where the camera points.
-          // So if you point at a wall, you get wall hits; floor → floor hits.
-          // To cover all surfaces we request 3 sources with manually offset rays.
-          // offsetRay is a XRRay — supported in Chrome Android ARCore.
-          var readyCount=0;
-          function tryStart(){readyCount++;if(readyCount===3) onAllReady();}
-
+      session.requestReferenceSpace('local').then(function(ls){
+        xrRefSpace=ls;
+        session.requestReferenceSpace('viewer').then(function(vs){
+          var ready=0;
+          function check(){if(++ready===3)onReady();}
           try{
-            // Ray straight ahead (hits walls)
-            session.requestHitTestSource({
-              space: viewerSpace,
-              offsetRay: new XRRay({x:0,y:0,z:0,w:1},{x:0,y:0,z:-1,w:0})
-            }).then(function(s){hitSrcCenter=s;tryStart();}).catch(function(){tryStart();});
-
-            // Ray tilted 50° down from camera (hits floors when looking forward/slightly down)
-            session.requestHitTestSource({
-              space: viewerSpace,
-              offsetRay: new XRRay({x:0,y:0,z:0,w:1},{x:0,y:-.766,z:-.643,w:0})
-            }).then(function(s){hitSrcDown=s;tryStart();}).catch(function(){tryStart();});
-
-            // Ray tilted 50° up (hits ceilings when looking forward/slightly up)
-            // Origin must be {0,0,0,1} — the bug was passing direction as origin too
-            session.requestHitTestSource({
-              space: viewerSpace,
-              offsetRay: new XRRay({x:0,y:0,z:0,w:1},{x:0,y:0.766,z:-0.643,w:0})
-            }).then(function(s){hitSrcUp=s;tryStart();}).catch(function(){tryStart();});
-
-          } catch(e) {
-            // XRRay with offset not available — fall back to single straight viewer hit-test
-            console.warn('[AR] offsetRay not supported, using single hit-test source');
-            session.requestHitTestSource({space:viewerSpace}).then(function(s){
-              hitSrcCenter=s;hitSrcDown=null;hitSrcUp=null;
-              onAllReady();
-            }).catch(function(e2){toast('Hit-test failed: '+e2.message);session.end();});
+            session.requestHitTestSource({space:vs,offsetRay:new XRRay({x:0,y:0,z:0,w:1},{x:0,y:0,z:-1,w:0})})
+              .then(function(s){hitSrc.center=s;check();}).catch(check);
+            session.requestHitTestSource({space:vs,offsetRay:new XRRay({x:0,y:0,z:0,w:1},{x:0,y:-.766,z:-.643,w:0})})
+              .then(function(s){hitSrc.down=s;check();}).catch(check);
+            session.requestHitTestSource({space:vs,offsetRay:new XRRay({x:0,y:0,z:0,w:1},{x:0,y:.766,z:-.643,w:0})})
+              .then(function(s){hitSrc.up=s;check();}).catch(check);
+          }catch(e){
+            session.requestHitTestSource({space:vs})
+              .then(function(s){hitSrc.center=s;hitSrc.down=null;hitSrc.up=null;onReady();})
+              .catch(function(e2){toast('Hit-test error: '+e2.message);session.end();});
           }
-
-          function onAllReady(){
+          function onReady(){
             session.addEventListener('end',onSessionEnd);
             session.addEventListener('select',onTap);
-            stopPreview();
+            stopPreview();closePanel();
             document.getElementById('enter-ar').classList.add('gone');
             document.getElementById('mode-pill').classList.add('show');
-            setBadge('● ACTIVE');
-            setStatus('POINT AT FLOOR · WALL · OR CEILING');
-            showScan(true);showTap(false);showMoveHint(false);showGrabbed(false);
-            lastHitPos=null;surfaceFound=false;
-            setModeUI('place');
+            setARPill('● ACTIVE');setStatus('POINT AT FLOOR · WALL · OR CEILING');
+            qs('scan').show();qs('tap').hide();qs('move').hide();qs('grab').hide();
+            surfaceFound=false;lastHitPos=null;applyMode('place');
             renderer.setAnimationLoop(arLoop);
           }
-
-        }).catch(function(e){toast('Viewer space error: '+e.message);session.end();});
-      }).catch(function(e){toast('Local space error: '+e.message);session.end();});
-    }).catch(function(e){toast('setSession error: '+e.message);});
-  }).catch(function(e){toast('Could not start AR: '+e.message);});
+        });
+      });
+    });
+  }).catch(function(e){toast('AR: '+e.message);});
 }
 
 function onSessionEnd(){
   renderer.setAnimationLoop(null);
-  if(grabbedObj){setHighlight(grabbedObj,false);grabbedObj=null;}
-  hitSrcCenter=hitSrcDown=hitSrcUp=null;
-  xrRefSpace=null;xrSession=null;lastHitPos=null;lastHitNormal=null;surfaceFound=false;
-  hideAllReticles();
+  if(grabbedObj){hlOff(grabbedObj);grabbedObj=null;}
+  hitSrc.center=hitSrc.down=hitSrc.up=null;
+  xrRefSpace=null;xrSession=null;
+  lastHitPos=null;surfaceFound=false;
+  hideReticles();closePanel();
+  // Remove all price tags
+  placed.forEach(function(item){if(item.tag){item.tag.remove();}});
   document.getElementById('enter-ar').classList.remove('gone');
   document.getElementById('mode-pill').classList.remove('show');
-  document.getElementById('surf-type').textContent='';
-  setBadge('● READY');setStatus('SELECT A MODEL · TAP ENTER AR');
-  showScan(false);showTap(false);showMoveHint(false);showGrabbed(false);
+  setARPill('● READY');setStatus('SELECT A PRODUCT · TAP ENTER AR');
+  setSurfPill('');
+  qs('scan').hide();qs('tap').hide();qs('move').hide();qs('grab').hide();
   startPreview();
 }
 
-// ── CLASSIFY SURFACE FROM HIT MATRIX ────────────────────────
-// Column 1 of hit pose matrix = surface normal. m[5] = normal.y
-// ny > 0 → floor (normal up), ny < 0 → ceiling (normal down), else → wall
-function classifySurface(m){
-  var ny=m[5];
-  if(ny>0.35)  return 'floor';   // lenient: 0.35 catches real-world slightly-tilted ceilings
-  if(ny<-0.35) return 'ceiling'; // lenient: ARCore ceiling normals often not exactly -1
-  return 'wall';
-}
-
-// ── AR LOOP ─────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// AR RENDER LOOP
+// ─────────────────────────────────────────────────────────────────
 function arLoop(ts,frame){
   if(!frame){renderer.render(scene,camera);return;}
 
-  var bestHitPos=null,bestMatrix=null,bestType=null;
+  var camDir=new THREE.Vector3();camera.getWorldDirection(camDir);
+  var best={pos:null,mat:null,type:null,score:-999};
 
-  // Gather results from all three hit-test sources
-  // Priority: pick the hit whose surface normal best aligns with camera look direction
-  var camDir=new THREE.Vector3();
-  camera.getWorldDirection(camDir);
-
-  function evalSource(src){
-    if(!src||!xrRefSpace) return;
+  function evalSrc(src){
+    if(!src||!xrRefSpace)return;
     var hits=frame.getHitTestResults(src);
-    if(!hits.length) return;
+    if(!hits.length)return;
     var pose=hits[0].getPose(xrRefSpace);
-    if(!pose) return;
+    if(!pose)return;
     var m=pose.transform.matrix;
-    var type=classifySurface(m);
+    var ny=m[5];
+    var type=ny>0.35?'floor':ny<-0.35?'ceiling':'wall';
     var pos=new THREE.Vector3(m[12],m[13],m[14]);
-
-    // Score = how well the camera ray aligns toward the hit point
-    var camPos=new THREE.Vector3();
-    camera.getWorldPosition(camPos);
-    var toHit=new THREE.Vector3().subVectors(pos,camPos).normalize();
-    var camAlignment=toHit.dot(camDir); // 1 = hit directly in front of camera
-
-    // BONUS: reward hits whose surface type matches where the camera is looking
-    // camDir.y > 0.3  → looking up   → prefer ceiling hits
-    // camDir.y < -0.3 → looking down → prefer floor hits
-    // else            → looking level → prefer wall hits
-    var typeBonus=0;
-    if(camDir.y>0.3  && type==='ceiling') typeBonus=0.5;
-    if(camDir.y<-0.3 && type==='floor')   typeBonus=0.5;
-    if(Math.abs(camDir.y)<0.3 && type==='wall') typeBonus=0.3;
-
-    var score=camAlignment+typeBonus;
-
-    if(!bestHitPos || score > (bestScore||-999)){
-      bestHitPos=pos;
-      bestMatrix=m;
-      bestType=type;
-      bestScore=score;
-    }
+    var camPos=new THREE.Vector3();camera.getWorldPosition(camPos);
+    var align=new THREE.Vector3().subVectors(pos,camPos).normalize().dot(camDir);
+    var bonus=(camDir.y>0.3&&type==='ceiling')?.5:(camDir.y<-.3&&type==='floor')?.5:
+              (Math.abs(camDir.y)<.3&&type==='wall')?.3:0;
+    var score=align+bonus;
+    if(score>best.score){best={pos:pos,mat:m,type:type,score:score};}
   }
-  var bestScore=null;
-  evalSource(hitSrcCenter);
-  evalSource(hitSrcDown);
-  evalSource(hitSrcUp);
+  evalSrc(hitSrc.center);evalSrc(hitSrc.down);evalSrc(hitSrc.up);
 
-  if(bestHitPos && bestType){
-    lastHitPos=bestHitPos;
-    lastSurfaceType=bestType;
-    lastHitMatrix4=new THREE.Matrix4().fromArray(bestMatrix);
-
-    // Show the right coloured reticle
-    hideAllReticles();
-    var activeReticle = bestType==='floor'?reticleFloor : bestType==='wall'?reticleWall : reticleCeiling;
-
-    if(mode==='place' || (mode==='move' && grabbedObj)){
-      activeReticle.visible=true;
-      activeReticle.matrix.fromArray(bestMatrix);
+  if(best.pos){
+    lastHitPos=best.pos;lastSurfType=best.type;
+    lastHitMat4=new THREE.Matrix4().fromArray(best.mat);
+    if(mode==='move'&&grabbedObj){
+      grabbedObj.position.copy(best.pos);
+      grabbedObj.userData.baseY=best.pos.y;
     }
-
-    // Update grabbed object position
-    if(mode==='move' && grabbedObj){
-      grabbedObj.position.copy(bestHitPos);
-      grabbedObj.userData.baseY=bestHitPos.y;
-    }
-
-    // Update surface type indicator
-    setSurfaceType(bestType);
-
+    hideReticles();
+    var ar=reticles[best.type];
+    if(mode==='place'||(mode==='move'&&grabbedObj)){ar.visible=true;ar.matrix.fromArray(best.mat);}
+    setSurfPill(best.type);
     if(!surfaceFound){
-      surfaceFound=true;
-      showScan(false);
-      if(mode==='place'){showTap(true);}
-      else if(!grabbedObj){showMoveHint(true);}
-      updateStatusForSurface(bestType);
-    } else {
-      updateStatusForSurface(bestType);
+      surfaceFound=true;qs('scan').hide();
+      if(mode==='place') qs('tap').show();
+      else if(!grabbedObj) qs('move').show();
     }
-
+    updateStatusForSurface(best.type);
   } else {
-    hideAllReticles();
-    lastHitPos=null;
+    hideReticles();lastHitPos=null;
     if(surfaceFound){
-      surfaceFound=false;
-      showTap(false);showMoveHint(false);
-      if(!grabbedObj){showScan(true);setStatus('POINT AT FLOOR · WALL · OR CEILING');}
-      setSurfaceType('');
+      surfaceFound=false;qs('tap').hide();qs('move').hide();
+      if(!grabbedObj){qs('scan').show();setStatus('POINT AT FLOOR · WALL · OR CEILING');}
+      setSurfPill('');
     }
   }
 
-  // Animate non-grabbed objects
+  // Gentle float animation + project price tags
   var t=ts*.001;
-  placed.forEach(function(obj,i){
-    if(obj===grabbedObj)return;
-    obj.userData.rot=(obj.userData.rot||0)+.005;
-    obj.rotation.y=obj.userData.rot;
-    // Only float on floor objects; wall/ceiling objects stay fixed
-    if(obj.userData.surfaceType==='floor' && obj.userData.baseY!==undefined){
-      obj.position.y=obj.userData.baseY+Math.sin(t*1.3+i*.9)*.01;
+  placed.forEach(function(item,i){
+    if(item.mesh===grabbedObj)return;
+    item.mesh.userData.rot=(item.mesh.userData.rot||0)+.004;
+    item.mesh.rotation.y=item.mesh.userData.rot+item.rotY;
+    if(item.surfType==='floor'&&item.mesh.userData.baseY!==undefined){
+      item.mesh.position.y=item.mesh.userData.baseY+Math.sin(t*1.2+i*.8)*.008;
     }
+    updateTagPos(item);
   });
+  if(grabbedObj){
+    var gi=placed.find(function(x){return x.mesh===grabbedObj;});
+    if(gi) updateTagPos(gi);
+  }
 
   renderer.render(scene,camera);
 }
 
-function updateStatusForSurface(type){
-  if(mode==='place'){
-    if(type==='floor')   setStatus('FLOOR DETECTED · TAP TO PLACE');
-    else if(type==='wall')    setStatus('WALL DETECTED · TAP TO PLACE');
-    else if(type==='ceiling') setStatus('CEILING DETECTED · TAP TO PLACE');
-  } else if(!grabbedObj){
-    setStatus('POINT AT OBJECT · TAP TO GRAB');
-  }
+// ─────────────────────────────────────────────────────────────────
+// PRICE TAG DOM OVERLAY
+// ─────────────────────────────────────────────────────────────────
+function createPriceTag(item){
+  var el=document.createElement('div');
+  el.className='price-tag';
+  el.innerHTML=
+    '<div class="ptag-name">'+item.prod.name+'</div>'+
+    '<div class="ptag-price">'+item.prod.price+'</div>'+
+    '<div class="ptag-dims">'+item.prod.dims+'</div>';
+  el.addEventListener('click',function(){openPanel(item);});
+  document.body.appendChild(el);
+  item.tag=el;
+  setTimeout(function(){el.classList.add('show');},50);
 }
 
-// ── TAP ─────────────────────────────────────────────────────
+function updateTagPos(item){
+  if(!item.tag||!xrSession)return;
+  // Project 3D position to 2D screen
+  var pos=new THREE.Vector3();
+  item.mesh.getWorldPosition(pos);
+  // Lift tag above object
+  pos.y+=.22;
+  var projected=pos.clone().project(camera);
+  var x=(projected.x*.5+.5)*innerWidth;
+  var y=(-.5*projected.y+.5)*innerHeight;
+  // Hide if behind camera
+  if(projected.z>1){item.tag.style.opacity='0';return;}
+  item.tag.style.left=x+'px';
+  item.tag.style.top=y+'px';
+  item.tag.style.opacity=(activeItem===item)?'1':'0.82';
+}
+
+// ─────────────────────────────────────────────────────────────────
+// PLACEMENT
+// ─────────────────────────────────────────────────────────────────
 function onTap(){
   if(mode==='place') doPlace();
   else doMoveAction();
@@ -554,177 +795,439 @@ function onTap(){
 
 function doPlace(){
   if(!lastHitPos){toast('No surface detected — keep scanning');return;}
-  var def=MODELS.find(function(m){return m.id===selId;});
-  var obj=def.fn();
+  var prod=getProd(selId);
+  loadModel(prod,function(obj){
+    obj.position.copy(lastHitPos);
+    obj.userData.baseY=lastHitPos.y;
+    obj.userData.rot=0;
+    orientToSurface(obj,lastSurfType,lastHitMat4);
+    var s=(prod.baseScale||1)*userScale;
+    obj.scale.set(0,0,0);
+    scene.add(obj);
+    var item={mesh:obj,prod:prod,surfType:lastSurfType,rotY:0,varIdx:0,tag:null};
+    placed.push(item);
+    updateCount();
+    // Pop-in
+    var pv=0;var iv=setInterval(function(){
+      pv=Math.min(pv+.07,1);var e=1-Math.pow(1-pv,3);
+      obj.scale.setScalar(s*e);if(pv>=1)clearInterval(iv);
+    },14);
+    createPriceTag(item);
+    activeItem=item;
+    openPanel(item);
+    toast('📦 '+prod.name+' placed!');
+  });
+}
 
-  // Position at hit
-  obj.position.copy(lastHitPos);
-  obj.userData.baseY=lastHitPos.y;
-  obj.userData.rot=0;
-  obj.userData.surfaceType=lastSurfaceType;
-
-  // Orient object relative to surface normal using the hit matrix
-  // For walls/ceiling: align the object so it "sticks" to the surface
-  if(lastHitMatrix4 && (lastSurfaceType==='wall'||lastSurfaceType==='ceiling')){
-    // Extract the hit pose rotation — but only use it partially
-    // We want the object to face out from the wall, not tilt randomly
-    var q=new THREE.Quaternion();
-    var p=new THREE.Vector3();
-    var s=new THREE.Vector3();
-    lastHitMatrix4.decompose(p,q,s);
-
-    // Get surface normal (local Y of hit pose = column 1 of matrix)
-    var m=lastHitMatrix4.elements;
-    var nx=m[4],ny=m[5],nz=m[6]; // surface normal
-
-    if(lastSurfaceType==='wall'){
-      // Rotate object so its "up" aligns with surface normal
-      // This makes it appear to sit against the wall
-      var surfNormal=new THREE.Vector3(nx,ny,nz).normalize();
-      var up=new THREE.Vector3(0,1,0);
-      var quat=new THREE.Quaternion().setFromUnitVectors(up,surfNormal);
-      obj.quaternion.copy(quat);
-    } else if(lastSurfaceType==='ceiling'){
-      // Flip upside-down
-      obj.rotation.set(Math.PI,0,0);
-    }
+function orientToSurface(obj,surfType,mat4){
+  if(surfType==='wall'&&mat4){
+    var m=mat4.elements;
+    var n=new THREE.Vector3(m[4],m[5],m[6]).normalize();
+    obj.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),n);
+  } else if(surfType==='ceiling'){
+    obj.rotation.set(Math.PI,0,0);
   } else {
     obj.rotation.set(0,0,0);
   }
-
-  obj.scale.setScalar(0);
-  scene.add(obj);placed.push(obj);updateCount();
-  var emoji=lastSurfaceType==='floor'?'🟢':lastSurfaceType==='wall'?'🟠':'🔵';
-  toast(emoji+' '+def.em+' '+def.name+' placed on '+lastSurfaceType+'!');
-
-  // pop-in
-  var sv=0,tgt=userScale;
-  var iv=setInterval(function(){sv=Math.min(sv+.07,1);obj.scale.setScalar(tgt*(1-Math.pow(1-sv,3)));if(sv>=1)clearInterval(iv);},14);
 }
 
+function updateStatusForSurface(type){
+  if(mode==='place'){
+    setStatus({floor:'FLOOR DETECTED · TAP TO PLACE',wall:'WALL DETECTED · TAP TO PLACE',
+               ceiling:'CEILING DETECTED · TAP TO PLACE'}[type]||'TAP TO PLACE');
+  } else if(!grabbedObj){
+    setStatus('POINT AT ITEM · TAP TO GRAB');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// MOVE MODE
+// ─────────────────────────────────────────────────────────────────
 function doMoveAction(){
   if(grabbedObj){
-    setHighlight(grabbedObj,false);grabbedObj=null;
-    showGrabbed(false);
-    if(surfaceFound){showMoveHint(true);setStatus('POINT AT OBJECT · TAP TO GRAB');}
-    toast('Dropped ✓');
-    return;
+    hlOff(grabbedObj);grabbedObj=null;
+    qs('grab').hide();if(surfaceFound)qs('move').show();
+    setStatus('POINT AT ITEM · TAP TO GRAB');
+    toast('Dropped ✓');return;
   }
-  if(!placed.length){toast('No objects placed yet');return;}
+  if(!placed.length){toast('No items placed yet');return;}
   var camPos=new THREE.Vector3();var camDir=new THREE.Vector3();
   camera.getWorldPosition(camPos);camera.getWorldDirection(camDir);
-  var best=null,bestScore=Infinity;
-  placed.forEach(function(obj){
-    var toObj=new THREE.Vector3().subVectors(obj.position,camPos);
-    var dist=toObj.length();if(dist<.05)return;
-    toObj.normalize();
-    var dot=toObj.dot(camDir);if(dot<.3)return;
-    var angle=Math.acos(Math.min(1,dot));
-    var score=angle*3+dist*.05;
-    if(score<bestScore){bestScore=score;best=obj;}
+  var best=null,bestS=Infinity;
+  placed.forEach(function(item){
+    var d=new THREE.Vector3().subVectors(item.mesh.position,camPos);
+    var dist=d.length();if(dist<.05)return;
+    d.normalize();var dot=d.dot(camDir);if(dot<.2)return;
+    var score=Math.acos(Math.min(1,dot))*3+dist*.05;
+    if(score<bestS){bestS=score;best=item.mesh;}
   });
-  if(!best){toast('Point your camera directly at an object');return;}
-  grabbedObj=best;setHighlight(grabbedObj,true);
-  showMoveHint(false);showGrabbed(true);
-  setStatus('MOVE PHONE TO REPOSITION · TAP TO DROP');
-  toast('Grabbed! Move your phone to any surface');
+  if(!best){toast('Point your camera at an item');return;}
+  grabbedObj=best;hlOn(grabbedObj);
+  closePanel();qs('move').hide();qs('grab').show();
+  setStatus('MOVE YOUR PHONE · TAP TO DROP');
+  toast('Grabbed — move your phone to reposition');
 }
 
-// ── MODE ─────────────────────────────────────────────────────
-function setModeUI(m){
+// ─────────────────────────────────────────────────────────────────
+// PRODUCT PANEL
+// ─────────────────────────────────────────────────────────────────
+function openPanel(item){
+  activeItem=item;
+  var p=item.prod;
+  document.getElementById('panel-name').textContent=p.name;
+  document.getElementById('panel-price').textContent=p.price;
+  document.getElementById('panel-dims').textContent=p.dims;
+  // Variants
+  var vw=document.getElementById('var-wrap');vw.innerHTML='';
+  p.variants.forEach(function(v,i){
+    var d=document.createElement('div');
+    d.className='var-dot'+(i===item.varIdx?' on':'');
+    d.style.background=v.hex;d.title=v.name;
+    d.addEventListener('click',function(){
+      item.varIdx=i;
+      vw.querySelectorAll('.var-dot').forEach(function(x){x.classList.remove('on');});
+      d.classList.add('on');
+      applyVariantColor(item.mesh,v.hex);
+      toast('Finish: '+v.name);
+    });
+    vw.appendChild(d);
+  });
+  // Wishlist state
+  var wb=document.getElementById('btn-wish');
+  var inWish=!!wishlistSet[p.id];
+  wb.textContent=inWish?'♥ Saved':'♡ Wishlist';
+  wb.classList.toggle('saved',inWish);
+  document.getElementById('prod-panel').classList.add('show');
+}
+function closePanel(){
+  document.getElementById('prod-panel').classList.remove('show');
+  activeItem=null;
+}
+
+function applyVariantColor(obj,hex){
+  var color=new THREE.Color(hex);
+  obj.traverse(function(child){
+    if(!child.isMesh)return;
+    child.material=child.material.clone();
+    child.material.color=color;
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CART & WISHLIST
+// ─────────────────────────────────────────────────────────────────
+function addToCart(){
+  if(!activeItem){toast('No item selected');return;}
+  var p=activeItem.prod;
+  cartItems.push({id:p.id,name:p.name,price:p.price});
+  toast('🛒 '+p.name+' added to cart!');
+  // In production: POST /api/cart with productId
+}
+
+function toggleWishlist(){
+  if(!activeItem){toast('No item selected');return;}
+  var p=activeItem.prod;
+  wishlistSet[p.id]=!wishlistSet[p.id];
+  var wb=document.getElementById('btn-wish');
+  var saved=wishlistSet[p.id];
+  wb.textContent=saved?'♥ Saved':'♡ Wishlist';
+  wb.classList.toggle('saved',saved);
+  // Update card indicator
+  var card=document.querySelector('[data-id="'+p.id+'"]');
+  if(card){var dot=card.querySelector('.card-wish');if(dot)dot.classList.toggle('show',saved);}
+  toast(saved?'♥ Added to wishlist':'Removed from wishlist');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SHARE
+// ─────────────────────────────────────────────────────────────────
+function getShareData(){
+  var p=activeItem?activeItem.prod:getProd(selId);
+  var url=window.location.origin+window.location.pathname+'?product='+p.id;
+  var text='Check out this '+p.name+' ('+p.price+') from MIRA Home — view it in AR! 🛋️';
+  return {url:url,text:text,p:p};
+}
+
+function shareToFacebook(){
+  var d=getShareData();
+  var fbUrl='https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(d.url)
+    +'&quote='+encodeURIComponent(d.text);
+  window.open(fbUrl,'_blank','width=600,height=400');
+  toast('Opening Facebook share…');
+}
+
+function shareToMessenger(){
+  var d=getShareData();
+  // On mobile, Messenger deep link; on desktop, fallback to fb.me send
+  var isMobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
+  if(isMobile){
+    window.location.href='fb-messenger://share?link='+encodeURIComponent(d.url)+'&app_id=';
+    setTimeout(function(){
+      // Fallback if app not installed
+      window.open('https://www.facebook.com/dialog/send?link='+encodeURIComponent(d.url),'_blank');
+    },1200);
+  } else {
+    window.open('https://www.facebook.com/dialog/send?link='+encodeURIComponent(d.url),'_blank','width=600,height=400');
+  }
+  toast('Opening Messenger…');
+}
+
+function copyLink(){
+  var d=getShareData();
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(d.url+' — '+d.text).then(function(){
+      toast('🔗 Link copied!');
+    });
+  } else {
+    // Fallback
+    var ta=document.createElement('textarea');ta.value=d.url;
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');
+    document.body.removeChild(ta);toast('🔗 Link copied!');
+  }
+}
+
+// Also support native Web Share API if available (best on mobile)
+function nativeShare(){
+  var d=getShareData();
+  if(navigator.share){
+    navigator.share({title:'MIRA Home AR — '+d.p.name,text:d.text,url:d.url})
+      .catch(function(){});
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SCREENSHOT
+// ─────────────────────────────────────────────────────────────────
+function takeScreenshot(){
+  var fl=document.getElementById('flash');
+  fl.style.opacity='.7';setTimeout(function(){fl.style.opacity='0';},180);
+  setTimeout(function(){
+    try{
+      var url=renderer.domElement.toDataURL('image/png');
+      var a=document.createElement('a');a.href=url;
+      a.download='MIRA-AR-'+Date.now()+'.png';a.click();
+      toast('📸 Saved! Check your downloads.');
+      // Also offer Web Share on mobile
+      if(navigator.share&&navigator.canShare){
+        renderer.domElement.toBlob(function(blob){
+          var file=new File([blob],'MIRA-AR.png',{type:'image/png'});
+          if(navigator.canShare({files:[file]})){
+            navigator.share({files:[file],title:'MIRA Home AR Preview',text:'Check out this furniture in AR!'});
+          }
+        },'image/png');
+      }
+    }catch(e){toast('Use your phone\'s screenshot button 📲');}
+  },220);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ROTATION (manual)
+// ─────────────────────────────────────────────────────────────────
+function rotateActive(dir){
+  var target=activeItem||(grabbedObj?placed.find(function(x){return x.mesh===grabbedObj;}):null);
+  if(!target){toast('Select or grab an item first');return;}
+  target.rotY+=(dir*Math.PI/8);
+  target.mesh.rotation.y=(target.mesh.userData.rot||0)+target.rotY;
+  toast('Rotated '+(dir>0?'↻':'↺'));
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SCALE
+// ─────────────────────────────────────────────────────────────────
+function scaleActive(up){
+  var meshTarget=activeItem?activeItem.mesh:(grabbedObj||null);
+  if(meshTarget){
+    var s=up?Math.min(meshTarget.scale.x*1.15,4):Math.max(meshTarget.scale.x*.87,.1);
+    meshTarget.scale.setScalar(s);toast(up?'Scale ⊕':'Scale ⊖');
+  } else {
+    userScale=up?Math.min(userScale+.2,3):Math.max(userScale-.2,.2);
+    toast('Next: '+(userScale.toFixed(1))+'×');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// HIGHLIGHT
+// ─────────────────────────────────────────────────────────────────
+function hlOn(obj){
+  obj.traverse(function(c){
+    if(!c.isMesh)return;
+    if(!c.userData._oe){c.userData._oe=c.material.emissive?c.material.emissive.clone():new THREE.Color(0,0,0);c.userData._oi=c.material.emissiveIntensity||0;}
+    c.material=c.material.clone();c.material.emissive=new THREE.Color(0x00c896);c.material.emissiveIntensity=.35;
+  });
+}
+function hlOff(obj){
+  obj.traverse(function(c){
+    if(!c.isMesh)return;
+    if(c.userData._oe){c.material=c.material.clone();c.material.emissive=c.userData._oe;c.material.emissiveIntensity=c.userData._oi;}
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// MODE
+// ─────────────────────────────────────────────────────────────────
+function applyMode(m){
   mode=m;
   document.getElementById('mp-place').classList.toggle('on',m==='place');
   document.getElementById('mp-move').classList.toggle('on',m==='move');
-  if(grabbedObj){setHighlight(grabbedObj,false);grabbedObj=null;}
-  showGrabbed(false);
-  hideAllReticles();
+  if(grabbedObj){hlOff(grabbedObj);grabbedObj=null;}
+  qs('grab').hide();hideReticles();
   if(m==='place'){
-    showMoveHint(false);
-    if(surfaceFound){showTap(true);updateStatusForSurface(lastSurfaceType);}
-    else{showScan(true);showTap(false);setStatus('POINT AT FLOOR · WALL · OR CEILING');}
+    qs('move').hide();
+    if(surfaceFound){qs('tap').show();updateStatusForSurface(lastSurfType);}
+    else{qs('scan').show();qs('tap').hide();}
   } else {
-    showTap(false);
-    if(surfaceFound){showMoveHint(true);setStatus('POINT AT OBJECT · TAP TO GRAB');}
-    else{showScan(true);showMoveHint(false);setStatus('POINT AT FLOOR · WALL · OR CEILING');}
+    qs('tap').hide();
+    if(surfaceFound){qs('move').show();}
+    else{qs('scan').show();qs('move').hide();}
   }
 }
 
-// ── UI HELPERS ─────────────────────────────────────────────
-function setBadge(t,w){var b=document.getElementById('badge');b.textContent=t;b.className='badge'+(w?' warn':'');}
-function setStatus(t){document.getElementById('status-text').textContent=t;}
-function showScan(v){document.getElementById('scan-ui').classList.toggle('show',v);}
-function showTap(v){document.getElementById('tap-hint').classList.toggle('show',v);}
-function showMoveHint(v){document.getElementById('move-hint').classList.toggle('show',v);}
-function showGrabbed(v){document.getElementById('grabbed-indicator').classList.toggle('show',v);}
-function updateCount(){document.getElementById('pcnt').textContent=placed.length;}
-
-function setSurfaceType(type){
-  var el=document.getElementById('surf-type');
-  if(!type){el.textContent='';el.className='';return;}
-  var labels={floor:'▭ FLOOR',wall:'▮ WALL',ceiling:'▭ CEILING'};
-  el.textContent=labels[type]||'';
-  el.className=type;
-}
-
-var toastT;
-function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('on');},2800);}
-
-// ── TRAY ───────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// TRAY
+// ─────────────────────────────────────────────────────────────────
 function buildTray(){
   var wrap=document.getElementById('cards');
-  MODELS.forEach(function(m){
-    var card=document.createElement('div');card.className='card'+(m.id===selId?' sel':'');
-    card.innerHTML='<div class="em">'+m.em+'</div><div class="nm">'+m.name+'</div>';
-    card.addEventListener('click',function(){document.querySelectorAll('.card').forEach(function(c){c.classList.remove('sel');});card.classList.add('sel');selId=m.id;toast(m.em+' '+m.name+' selected');});
+  CATALOG.forEach(function(p){
+    var card=document.createElement('div');
+    card.className='card'+(p.id===selId?' sel':'');
+    card.dataset.id=p.id;
+    var surfIcon=p.surface==='wall'?'🧱':p.surface==='ceiling'?'☁️':'';
+    card.innerHTML=
+      '<div class="card-wish">♥</div>'+
+      '<div class="cem">'+p.em+'</div>'+
+      '<div class="cnm">'+p.name.split(' ').slice(0,2).join(' ')+'</div>'+
+      '<div class="cpr">'+p.price+'</div>'+
+      '<div class="card-surface">'+surfIcon+'</div>';
+    card.addEventListener('click',function(){
+      document.querySelectorAll('.card').forEach(function(c){c.classList.remove('sel');});
+      card.classList.add('sel');selId=p.id;
+      var hint=p.surface==='wall'?'➡ Best on walls':p.surface==='ceiling'?'⬆ Best on ceiling':'⬇ Best on floor';
+      toast(p.em+' '+p.name+' · '+hint);
+    });
     wrap.appendChild(card);
   });
 }
 
-// ── BUTTONS ───────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// BUTTONS
+// ─────────────────────────────────────────────────────────────────
 function bindButtons(){
   document.getElementById('b-undo').addEventListener('click',function(){
-    if(!placed.length)return;var obj=placed.pop();
-    if(obj===grabbedObj){setHighlight(obj,false);grabbedObj=null;showGrabbed(false);}
-    scene.remove(obj);updateCount();toast('↩ Removed');
+    if(!placed.length)return;
+    var item=placed.pop();
+    if(item.mesh===grabbedObj){hlOff(item.mesh);grabbedObj=null;qs('grab').hide();}
+    if(item===activeItem)closePanel();
+    if(item.tag){item.tag.remove();}
+    scene.remove(item.mesh);updateCount();toast('↩ Removed');
   });
-  document.getElementById('b-up').addEventListener('click',function(){
-    if(grabbedObj){var s=Math.min(grabbedObj.scale.x+.15,4);grabbedObj.scale.setScalar(s);toast('Scale: '+s.toFixed(2)+'×');}
-    else{userScale=Math.min(userScale+.25,4);toast('Next: '+userScale.toFixed(2)+'×');}
-  });
-  document.getElementById('b-dn').addEventListener('click',function(){
-    if(grabbedObj){var s=Math.max(grabbedObj.scale.x-.15,.15);grabbedObj.scale.setScalar(s);toast('Scale: '+s.toFixed(2)+'×');}
-    else{userScale=Math.max(userScale-.25,.25);toast('Next: '+userScale.toFixed(2)+'×');}
-  });
+  document.getElementById('b-rl').addEventListener('click',function(){rotateActive(-1);});
+  document.getElementById('b-rr').addEventListener('click',function(){rotateActive(1);});
+  document.getElementById('b-up').addEventListener('click',function(){scaleActive(true);});
+  document.getElementById('b-dn').addEventListener('click',function(){scaleActive(false);});
+  document.getElementById('b-cam').addEventListener('click',takeScreenshot);
   document.getElementById('b-clr').addEventListener('click',function(){
-    if(grabbedObj){setHighlight(grabbedObj,false);grabbedObj=null;showGrabbed(false);}
-    placed.forEach(function(o){scene.remove(o);});placed=[];updateCount();toast('All cleared');
+    if(grabbedObj){hlOff(grabbedObj);grabbedObj=null;qs('grab').hide();}
+    closePanel();
+    placed.forEach(function(i){if(i.tag)i.tag.remove();scene.remove(i.mesh);});
+    placed=[];updateCount();toast('All cleared');
   });
   document.getElementById('enter-ar').addEventListener('click',enterAR);
-  document.getElementById('mp-place').addEventListener('click',function(){if(xrSession)setModeUI('place');});
-  document.getElementById('mp-move').addEventListener('click',function(){if(xrSession)setModeUI('move');});
+  document.getElementById('mp-place').addEventListener('click',function(){if(xrSession)applyMode('place');});
+  document.getElementById('mp-move').addEventListener('click',function(){if(xrSession)applyMode('move');});
+  document.getElementById('panel-close').addEventListener('click',closePanel);
+  document.getElementById('btn-cart').addEventListener('click',addToCart);
+  document.getElementById('btn-wish').addEventListener('click',toggleWishlist);
+  document.getElementById('btn-fb').addEventListener('click',shareToFacebook);
+  document.getElementById('btn-msg').addEventListener('click',shareToMessenger);
+  document.getElementById('btn-copy').addEventListener('click',copyLink);
 }
 
-// ── AR CHECK ──────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// DEEP LINK  ?product=chair  launches AR with that item pre-selected
+// ─────────────────────────────────────────────────────────────────
+function handleDeepLink(){
+  var pid=new URLSearchParams(window.location.search).get('product');
+  if(pid&&getProd(pid)){
+    selId=pid;
+    document.querySelectorAll('.card').forEach(function(c){c.classList.toggle('sel',c.dataset.id===pid);});
+    toast('🔗 Viewing: '+getProd(pid).name);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────
+function getProd(id){return CATALOG.find(function(p){return p.id===id;})||CATALOG[0];}
+
+// HUD element helper — show/hide by id prefix
+var ELS={};
+function qs(key){
+  var map={scan:'scan-ui',tap:'tap-hint',move:'move-hint',grab:'grab-hint'};
+  var id=map[key]||key;
+  if(!ELS[key]) ELS[key]=document.getElementById(id);
+  return {
+    show:function(){ELS[key].classList.add('show');},
+    hide:function(){ELS[key].classList.remove('show');}
+  };
+}
+
+function setARPill(t,w){var b=document.getElementById('ar-pill');b.textContent=t;b.className=(w?'warn':'');}
+function setStatus(t){document.getElementById('status-txt').textContent=t;}
+function setSurfPill(type){
+  var el=document.getElementById('surf-pill');
+  el.textContent={floor:'▭ FLOOR',wall:'▮ WALL',ceiling:'▭ CEILING'}[type]||'';
+  el.className=type;
+}
+function updateCount(){document.getElementById('pcnt').textContent=placed.length;}
+
+var toastT;
+function toast(msg){
+  var el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');
+  clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('on');},2800);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// AR CHECK
+// ─────────────────────────────────────────────────────────────────
 function checkAR(){
   if(!navigator.xr){markNA();return;}
   navigator.xr.isSessionSupported('immersive-ar').then(function(ok){if(!ok)markNA();}).catch(markNA);
 }
 function markNA(){
-  var btn=document.getElementById('enter-ar');btn.innerHTML='⚠ AR NOT AVAILABLE';btn.classList.add('na');
-  btn.onclick=function(){toast('Use Chrome on Android with ARCore');};
-  setBadge('● NO WEBXR',true);
-  setTimeout(function(){toast('Open in Chrome on an ARCore-compatible Android device');},2000);
+  var btn=document.getElementById('enter-ar');
+  btn.innerHTML='⚠ AR NOT AVAILABLE';btn.classList.add('na');
+  btn.onclick=function(){toast('Use Chrome on Android with ARCore support');};
+  setARPill('● NO AR',true);
+  setTimeout(function(){toast('Open in Chrome on an ARCore-compatible Android device');},1800);
 }
 
-// ── LOADER ────────────────────────────────────────────────
-function runLoader(cb){var fill=document.getElementById('lfill'),p=0;var iv=setInterval(function(){p+=5+Math.random()*10;fill.style.width=Math.min(p,100)+'%';if(p>=100){clearInterval(iv);setTimeout(cb,150);}},50);}
+// ─────────────────────────────────────────────────────────────────
+// LOADER
+// ─────────────────────────────────────────────────────────────────
+function runLoader(cb){
+  var fill=document.getElementById('lfill'),p=0;
+  var iv=setInterval(function(){
+    p+=3+Math.random()*8;fill.style.width=Math.min(p,100)+'%';
+    if(p>=100){clearInterval(iv);setTimeout(cb,120);}
+  },50);
+}
 
-// ── BOOT ──────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',function(){
   runLoader(function(){
-    try{initScene();buildTray();bindButtons();checkAR();startPreview();}
-    catch(e){console.error(e);document.getElementById('loader').innerHTML='<h1 style="color:#FF2D6B">ERROR</h1><p style="color:rgba(255,255,255,.4);font-family:monospace;font-size:.75rem;margin-top:1rem;max-width:280px;text-align:center">'+e.message+'</p>';return;}
-    var ld=document.getElementById('loader');ld.style.opacity='0';setTimeout(function(){ld.remove();},500);
+    try{
+      initScene();buildTray();bindButtons();checkAR();handleDeepLink();startPreview();
+    }catch(e){
+      console.error(e);
+      document.getElementById('loader').innerHTML=
+        '<h1 style="color:#FF5C5C;font-family:monospace">ERROR</h1>'+
+        '<p style="color:rgba(255,255,255,.4);font-family:monospace;font-size:.7rem;margin-top:1rem;max-width:280px;text-align:center">'+e.message+'</p>';
+      return;
+    }
+    var ld=document.getElementById('loader');ld.style.opacity='0';
+    setTimeout(function(){ld.remove();},500);
   });
 });
 
