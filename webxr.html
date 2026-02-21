@@ -7,345 +7,141 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
+:root{--neon:#00FFB2;--red:#FF2D6B;--dark:#070A0E;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:var(--dark);color:#fff;font-family:'Syne',sans-serif;height:100vh;overflow:hidden;user-select:none;}
 
-:root {
-  --neon: #00FFB2;
-  --neon2: #FF2D6B;
-  --dark: #070A0E;
-  --glass: rgba(7,10,14,0.82);
-}
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s;}
+#loader h1{font-size:clamp(2rem,8vw,3.5rem);font-weight:800;letter-spacing:-2px;background:linear-gradient(135deg,var(--neon),#fff,var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+#loader p{font-family:'Space Mono',monospace;font-size:.65rem;color:rgba(255,255,255,.35);margin-top:.4rem;letter-spacing:3px;}
+.lbar{width:160px;height:2px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:1.8rem;}
+.lbar-fill{height:100%;background:var(--neon);width:0;transition:width .08s;}
 
-* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+/* HUD */
+#hud{position:fixed;inset:0;z-index:10;pointer-events:none;}
 
-body {
-  background: var(--dark);
-  color:#fff;
-  font-family:'Syne',sans-serif;
-  height:100vh; width:100vw;
-  overflow:hidden;
-  user-select:none;
-}
+/* TOP */
+#topbar{pointer-events:all;position:absolute;top:0;left:0;right:0;padding:1rem 1.2rem;background:linear-gradient(to bottom,rgba(7,10,14,.92),transparent);display:flex;align-items:center;justify-content:space-between;}
+.logo{font-weight:800;font-size:1.1rem;letter-spacing:-1px;}
+.logo b{color:var(--neon);}
+.badge{font-family:'Space Mono',monospace;font-size:.55rem;letter-spacing:1.5px;border:1px solid rgba(0,255,178,.3);border-radius:99px;padding:.25rem .75rem;color:var(--neon);}
 
-/* ── LOADER ── */
-#loader {
-  position:fixed; inset:0;
-  background:var(--dark);
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  z-index:9999; transition:opacity .5s;
-}
-#loader h1 {
-  font-size:clamp(2.2rem,8vw,4rem); font-weight:800; letter-spacing:-2px;
-  background:linear-gradient(135deg,var(--neon) 0%,#fff 50%,var(--neon2) 100%);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-}
-#loader p { font-family:'Space Mono',monospace; font-size:.7rem; color:rgba(255,255,255,.4); margin-top:.5rem; letter-spacing:3px; }
-.lbar { width:180px; height:2px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden; margin-top:2rem; }
-.lbar-fill { height:100%; background:var(--neon); width:0; border-radius:99px; transition:width .05s linear; }
+/* STATUS */
+#status-wrap{position:absolute;top:3.8rem;left:50%;transform:translateX(-50%);pointer-events:none;}
+#status-text{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:2px;color:rgba(255,255,255,.5);background:rgba(7,10,14,.55);backdrop-filter:blur(6px);border-radius:99px;padding:.3rem .9rem;border:1px solid rgba(255,255,255,.06);white-space:nowrap;}
 
-/* ── THREE CANVAS ── */
-#c { position:fixed; inset:0; z-index:1; touch-action:none; }
+/* SCAN UI */
+#scan-ui{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.8rem;opacity:0;transition:opacity .4s;}
+#scan-ui.show{opacity:1;}
+.rings{position:relative;width:96px;height:96px;display:flex;align-items:center;justify-content:center;}
+.ring{position:absolute;border-radius:50%;border:1.5px solid var(--neon);animation:rp 2s ease-in-out infinite;}
+.r1{width:36px;height:36px;}
+.r2{width:60px;height:60px;animation-delay:.25s;opacity:.6;}
+.r3{width:88px;height:88px;animation-delay:.5s;opacity:.3;}
+.crosshair{width:12px;height:12px;position:relative;}
+.crosshair::before,.crosshair::after{content:'';position:absolute;background:var(--neon);}
+.crosshair::before{width:2px;height:12px;left:5px;top:0;}
+.crosshair::after{width:12px;height:2px;top:5px;left:0;}
+@keyframes rp{0%,100%{transform:scale(1);opacity:inherit;}50%{transform:scale(.9);opacity:.3;}}
+.scan-lbl{font-family:'Space Mono',monospace;font-size:.58rem;color:rgba(255,255,255,.45);letter-spacing:2px;}
 
-/* ── HUD wrapper (sits above canvas, passes through touches except children) ── */
-#hud { position:fixed; inset:0; z-index:10; pointer-events:none; }
+/* TAP HINT */
+#tap-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.6rem;opacity:0;transition:opacity .4s;}
+#tap-hint.show{opacity:1;}
+.tap-ring{width:52px;height:52px;border-radius:50%;border:2px solid var(--neon);animation:ping 1.5s ease-out infinite;}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(0,255,178,.5);}70%{box-shadow:0 0 0 16px rgba(0,255,178,0);}100%{box-shadow:0 0 0 0 rgba(0,255,178,0);}}
+.tap-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:1.3rem;}
+.tap-lbl{font-family:'Space Mono',monospace;font-size:.58rem;color:var(--neon);letter-spacing:2px;}
 
-/* ── TOPBAR ── */
-#topbar {
-  pointer-events:all;
-  position:absolute; top:0; left:0; right:0;
-  padding:env(safe-area-inset-top,0) 0 0;
-  background:linear-gradient(to bottom,rgba(7,10,14,.92) 70%,transparent);
-  display:flex; align-items:center; justify-content:space-between;
-  padding-left:1.2rem; padding-right:1.2rem; padding-top:calc(env(safe-area-inset-top,0px) + .9rem); padding-bottom:.9rem;
-}
-.logo { font-weight:800; font-size:1.15rem; letter-spacing:-1px; }
-.logo b { color:var(--neon); }
-.badge {
-  font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:1.5px;
-  border:1px solid rgba(0,255,178,.3); border-radius:99px;
-  padding:.28rem .8rem; color:var(--neon); backdrop-filter:blur(8px);
-  transition:color .3s,border-color .3s;
-}
-.badge.warn { color:var(--neon2); border-color:rgba(255,45,107,.4); }
+/* RAIL */
+#rail{pointer-events:all;position:absolute;right:.9rem;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:.5rem;}
+.rb{width:46px;height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(7,10,14,.85);backdrop-filter:blur(10px);color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;transition:all .18s;}
+.rb:active{transform:scale(.9);}
+.rb:hover{border-color:var(--neon);}
+.rb.red:hover{border-color:var(--red);}
+.rl{font-family:'Space Mono',monospace;font-size:.42rem;color:rgba(255,255,255,.25);text-align:center;letter-spacing:.5px;margin-top:-.25rem;}
 
-/* ── STATUS BAR ── */
-#statusbar {
-  position:absolute; top:4rem; left:50%; transform:translateX(-50%);
-  pointer-events:none; text-align:center;
-}
-#status-text {
-  display:inline-block;
-  font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:2px;
-  color:rgba(255,255,255,.55); background:rgba(7,10,14,.5);
-  backdrop-filter:blur(6px); border-radius:99px;
-  padding:.35rem 1rem; border:1px solid rgba(255,255,255,.07);
-  transition:opacity .3s;
-}
+/* TRAY */
+#tray{pointer-events:all;position:absolute;bottom:0;left:0;right:0;padding:.8rem 1rem calc(env(safe-area-inset-bottom,0px) + 1rem);background:linear-gradient(to top,rgba(7,10,14,.96) 55%,transparent);}
+.tray-hd{display:flex;justify-content:space-between;margin-bottom:.5rem;}
+.tray-lbl{font-family:'Space Mono',monospace;font-size:.52rem;color:rgba(255,255,255,.28);letter-spacing:3px;}
+#pcnt-lbl{font-family:'Space Mono',monospace;font-size:.52rem;color:rgba(255,255,255,.28);letter-spacing:1px;}
+#pcnt-lbl span{color:var(--neon);font-weight:700;}
+#cards{display:flex;gap:.5rem;overflow-x:auto;scrollbar-width:none;}
+#cards::-webkit-scrollbar{display:none;}
+.card{flex-shrink:0;width:68px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:13px;padding:.45rem .35rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.28rem;touch-action:manipulation;transition:all .2s cubic-bezier(.34,1.56,.64,1);}
+.card:active{transform:scale(.9);}
+.card.sel{border-color:var(--neon);background:rgba(0,255,178,.07);transform:translateY(-4px);box-shadow:0 0 18px rgba(0,255,178,.16);}
+.card .em{font-size:1.4rem;line-height:1;}
+.card .nm{font-family:'Space Mono',monospace;font-size:.48rem;color:rgba(255,255,255,.45);text-align:center;}
+.card.sel .nm{color:var(--neon);}
 
-/* ── CENTER RETICLE UI (scanning animation in DOM, not 3D) ── */
-#scan-ui {
-  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-  pointer-events:none;
-  display:flex; flex-direction:column; align-items:center; gap:.8rem;
-  opacity:0; transition:opacity .4s;
-}
-#scan-ui.show { opacity:1; }
+/* ENTER AR */
+#enter-ar{pointer-events:all;position:absolute;bottom:9rem;left:50%;transform:translateX(-50%);background:var(--neon);color:#000;border:none;border-radius:99px;padding:.85rem 2rem;font-family:'Syne',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;box-shadow:0 0 32px rgba(0,255,178,.4);transition:all .25s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:.45rem;white-space:nowrap;touch-action:manipulation;}
+#enter-ar:hover{transform:translateX(-50%) scale(1.04);}
+#enter-ar:active{transform:translateX(-50%) scale(.95);}
+#enter-ar.gone{display:none;}
+#enter-ar.na{background:rgba(255,45,107,.12);color:var(--red);border:1px solid rgba(255,45,107,.35);box-shadow:0 0 24px rgba(255,45,107,.12);}
 
-.reticle-rings {
-  position:relative; width:100px; height:100px;
-  display:flex; align-items:center; justify-content:center;
-}
-.ring {
-  position:absolute; border-radius:50%;
-  border:1.5px solid var(--neon);
-  animation:ring-pulse 2s ease-in-out infinite;
-}
-.ring-1 { width:40px; height:40px; animation-delay:0s; }
-.ring-2 { width:64px; height:64px; animation-delay:.3s; opacity:.6; }
-.ring-3 { width:90px; height:90px; animation-delay:.6s; opacity:.3; }
-.ring-cross {
-  width:14px; height:14px; position:relative;
-}
-.ring-cross::before,.ring-cross::after {
-  content:''; position:absolute; background:var(--neon); border-radius:2px;
-}
-.ring-cross::before { width:2px; height:14px; left:6px; top:0; }
-.ring-cross::after  { width:14px; height:2px; top:6px; left:0; }
+/* TOAST */
+#toast{position:fixed;bottom:8.5rem;left:50%;transform:translateX(-50%) translateY(8px);font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:1px;color:var(--neon);background:rgba(0,255,178,.1);border:1px solid rgba(0,255,178,.3);border-radius:99px;padding:.4rem 1rem;white-space:nowrap;pointer-events:none;z-index:9999;opacity:0;transition:all .22s;}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
 
-@keyframes ring-pulse {
-  0%,100% { transform:scale(1); opacity:inherit; }
-  50% { transform:scale(.92); opacity:.4; }
-}
-
-.scan-label {
-  font-family:'Space Mono',monospace; font-size:.6rem;
-  color:rgba(255,255,255,.5); letter-spacing:2.5px; text-align:center;
-}
-
-/* "tap to place" prompt when surface found */
-#tap-hint {
-  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-  pointer-events:none; text-align:center;
-  display:flex; flex-direction:column; align-items:center; gap:.5rem;
-  opacity:0; transition:opacity .4s;
-}
-#tap-hint.show { opacity:1; }
-.tap-circle {
-  width:56px; height:56px; border-radius:50%;
-  border:2px solid var(--neon);
-  box-shadow:0 0 0 0 rgba(0,255,178,.4);
-  animation:tap-ping 1.6s ease-out infinite;
-}
-@keyframes tap-ping {
-  0%   { box-shadow:0 0 0 0 rgba(0,255,178,.5); }
-  70%  { box-shadow:0 0 0 18px rgba(0,255,178,0); }
-  100% { box-shadow:0 0 0 0 rgba(0,255,178,0); }
-}
-.tap-circle-inner {
-  width:56px; height:56px; border-radius:50%;
-  position:absolute; top:0; left:0;
-  display:flex; align-items:center; justify-content:center;
-  font-size:1.4rem;
-}
-.tap-text {
-  font-family:'Space Mono',monospace; font-size:.6rem;
-  color:var(--neon); letter-spacing:2px;
-}
-
-/* ── RIGHT ACTION RAIL ── */
-#rail {
-  pointer-events:all;
-  position:absolute; right:1rem; top:50%; transform:translateY(-50%);
-  display:flex; flex-direction:column; gap:.6rem;
-}
-.rail-btn {
-  width:48px; height:48px; border-radius:13px;
-  border:1px solid rgba(255,255,255,.12);
-  background:var(--glass); backdrop-filter:blur(12px);
-  color:#fff; font-size:1.1rem; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  transition:all .2s; -webkit-backdrop-filter:blur(12px);
-  touch-action:manipulation;
-}
-.rail-btn:active { transform:scale(.92); }
-.rail-btn:hover { border-color:var(--neon); box-shadow:0 0 14px rgba(0,255,178,.18); }
-.rail-btn.red:hover { border-color:var(--neon2); box-shadow:0 0 14px rgba(255,45,107,.2); }
-
-.rail-label {
-  font-family:'Space Mono',monospace; font-size:.45rem;
-  color:rgba(255,255,255,.3); text-align:center; letter-spacing:.5px; margin-top:-.3rem;
-}
-
-/* ── BOTTOM TRAY ── */
-#tray {
-  pointer-events:all;
-  position:absolute; bottom:0; left:0; right:0;
-  padding:0 1rem calc(env(safe-area-inset-bottom,0px) + 1rem);
-  background:linear-gradient(to top,rgba(7,10,14,.95) 55%,transparent);
-}
-.tray-row {
-  display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:.55rem;
-}
-.tray-label {
-  font-family:'Space Mono',monospace; font-size:.55rem;
-  color:rgba(255,255,255,.3); letter-spacing:3px;
-}
-#placed-badge {
-  font-family:'Space Mono',monospace; font-size:.55rem;
-  color:rgba(255,255,255,.3); letter-spacing:1px;
-}
-#placed-badge span { color:var(--neon); font-weight:700; }
-
-#cards {
-  display:flex; gap:.55rem; overflow-x:auto; padding-bottom:.2rem;
-  scrollbar-width:none;
-}
-#cards::-webkit-scrollbar { display:none; }
-
-.card {
-  flex-shrink:0; width:72px;
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:14px; padding:.5rem .4rem;
-  cursor:pointer;
-  display:flex; flex-direction:column; align-items:center; gap:.3rem;
-  transition:all .22s cubic-bezier(.34,1.56,.64,1);
-  touch-action:manipulation;
-}
-.card:active { transform:scale(.94); }
-.card.sel {
-  border-color:var(--neon);
-  background:rgba(0,255,178,.07);
-  transform:translateY(-5px);
-  box-shadow:0 0 20px rgba(0,255,178,.18);
-}
-.card .em { font-size:1.5rem; line-height:1; }
-.card .nm {
-  font-family:'Space Mono',monospace; font-size:.5rem;
-  color:rgba(255,255,255,.5); text-align:center;
-}
-.card.sel .nm { color:var(--neon); }
-
-/* ── ENTER AR BUTTON ── */
-#enter-ar {
-  pointer-events:all;
-  position:absolute; bottom:9.5rem; left:50%; transform:translateX(-50%);
-  background:var(--neon); color:#000;
-  border:none; border-radius:99px;
-  padding:.9rem 2.2rem;
-  font-family:'Syne',sans-serif; font-weight:800; font-size:.95rem;
-  cursor:pointer; white-space:nowrap;
-  box-shadow:0 0 36px rgba(0,255,178,.45);
-  transition:all .3s cubic-bezier(.34,1.56,.64,1);
-  display:flex; align-items:center; gap:.5rem;
-  touch-action:manipulation;
-}
-#enter-ar:hover { transform:translateX(-50%) scale(1.04); }
-#enter-ar:active { transform:translateX(-50%) scale(.96); }
-#enter-ar.gone { display:none; }
-#enter-ar.unavail {
-  background:rgba(255,45,107,.12); color:var(--neon2);
-  border:1px solid rgba(255,45,107,.4);
-  box-shadow:0 0 30px rgba(255,45,107,.15);
-}
-
-/* ── TOAST ── */
-#toast {
-  position:fixed; bottom:9rem; left:50%; transform:translateX(-50%) translateY(8px);
-  font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:1px;
-  color:var(--neon); background:rgba(0,255,178,.1);
-  border:1px solid rgba(0,255,178,.35); border-radius:99px;
-  padding:.45rem 1.1rem; white-space:nowrap;
-  pointer-events:none; z-index:999;
-  opacity:0; transition:all .25s;
-}
-#toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
-
-/* ── SCANLINE OVERLAY ── */
-body::after {
-  content:''; position:fixed; inset:0; pointer-events:none; z-index:9997;
-  background:repeating-linear-gradient(to bottom,transparent 0,transparent 3px,rgba(0,0,0,.02) 3px,rgba(0,0,0,.02) 4px);
-}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;background:repeating-linear-gradient(to bottom,transparent 0,transparent 3px,rgba(0,0,0,.018) 3px,rgba(0,0,0,.018) 4px);}
 </style>
 </head>
 <body>
 
-<!-- Loader -->
 <div id="loader">
   <h1>AR ZONE</h1>
   <p>SPATIAL ENGINE</p>
-  <div class="lbar"><div class="lbar-fill" id="lbar-fill"></div></div>
+  <div class="lbar"><div class="lbar-fill" id="lfill"></div></div>
 </div>
 
-<!-- Three.js canvas injected here by JS -->
-
-<!-- HUD -->
 <div id="hud">
   <div id="topbar">
     <div class="logo">AR <b>ZONE</b></div>
     <div class="badge" id="badge">● READY</div>
   </div>
+  <div id="status-wrap"><span id="status-text">SELECT A MODEL · TAP ENTER AR</span></div>
 
-  <div id="statusbar">
-    <span id="status-text">SELECT A MODEL AND TAP ENTER AR</span>
-  </div>
-
-  <!-- Scanning animation (shown while looking for surface) -->
   <div id="scan-ui">
-    <div class="reticle-rings">
-      <div class="ring ring-3"></div>
-      <div class="ring ring-2"></div>
-      <div class="ring ring-1"></div>
-      <div class="ring-cross"></div>
+    <div class="rings">
+      <div class="ring r3"></div>
+      <div class="ring r2"></div>
+      <div class="ring r1"></div>
+      <div class="crosshair"></div>
     </div>
-    <div class="scan-label">SCANNING SURFACE...</div>
+    <div class="scan-lbl">SCANNING SURFACE…</div>
   </div>
 
-  <!-- Tap hint (shown when surface found) -->
   <div id="tap-hint">
-    <div style="position:relative;width:56px;height:56px;">
-      <div class="tap-circle"></div>
-      <div class="tap-circle-inner">👆</div>
+    <div style="position:relative;width:52px;height:52px;">
+      <div class="tap-ring"></div>
+      <div class="tap-icon">👆</div>
     </div>
-    <div class="tap-text">TAP TO PLACE</div>
+    <div class="tap-lbl">TAP TO PLACE</div>
   </div>
 
-  <!-- Right rail -->
   <div id="rail">
-    <div>
-      <button class="rail-btn" id="btn-undo">↩</button>
-      <div class="rail-label">UNDO</div>
-    </div>
-    <div>
-      <button class="rail-btn" id="btn-up">⊕</button>
-      <div class="rail-label">BIGGER</div>
-    </div>
-    <div>
-      <button class="rail-btn" id="btn-dn">⊖</button>
-      <div class="rail-label">SMALLER</div>
-    </div>
-    <div>
-      <button class="rail-btn red" id="btn-clr">✕</button>
-      <div class="rail-label">CLEAR</div>
-    </div>
+    <div><button class="rb" id="b-undo">↩</button><div class="rl">UNDO</div></div>
+    <div><button class="rb" id="b-up">⊕</button><div class="rl">BIGGER</div></div>
+    <div><button class="rb" id="b-dn">⊖</button><div class="rl">SMALLER</div></div>
+    <div><button class="rb red" id="b-clr">✕</button><div class="rl">CLEAR</div></div>
   </div>
 
-  <!-- Bottom tray -->
   <div id="tray">
-    <div class="tray-row">
-      <div class="tray-label">CHOOSE MODEL</div>
-      <div id="placed-badge">PLACED <span id="pcount">0</span></div>
+    <div class="tray-hd">
+      <div class="tray-lbl">MODEL</div>
+      <div id="pcnt-lbl">PLACED <span id="pcnt">0</span></div>
     </div>
     <div id="cards"></div>
   </div>
 
-  <!-- Enter AR -->
   <button id="enter-ar">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-      <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-      <path d="M2 17l10 5 10-5"/>
-      <path d="M2 12l10 5 10-5"/>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
     </svg>
     ENTER AR
   </button>
@@ -354,179 +150,195 @@ body::after {
 <div id="toast"></div>
 
 <script>
-(function () {
+(function(){
 'use strict';
 
 // ── MODELS ──────────────────────────────────────────────────────────
-var MODELS = [
-  {id:'cube',    name:'Cube',    em:'📦', fn:mkCube},
-  {id:'sphere',  name:'Sphere',  em:'🔮', fn:mkSphere},
-  {id:'torus',   name:'Torus',   em:'🍩', fn:mkTorus},
-  {id:'rocket',  name:'Rocket',  em:'🚀', fn:mkRocket},
-  {id:'crystal', name:'Crystal', em:'💎', fn:mkCrystal},
-  {id:'pyramid', name:'Pyramid', em:'🔺', fn:mkPyramid},
-  {id:'tree',    name:'Tree',    em:'🌲', fn:mkTree},
-  {id:'ring',    name:'Ring',    em:'💍', fn:mkRing},
+// All models are built at ~0.15–0.2m size, sitting above y=0
+var MODELS=[
+  {id:'cube',   name:'Cube',   em:'📦', fn:mkCube},
+  {id:'sphere', name:'Sphere', em:'🔮', fn:mkSphere},
+  {id:'torus',  name:'Torus',  em:'🍩', fn:mkTorus},
+  {id:'rocket', name:'Rocket', em:'🚀', fn:mkRocket},
+  {id:'gem',    name:'Crystal',em:'💎', fn:mkGem},
+  {id:'pyra',   name:'Pyramid',em:'🔺', fn:mkPyramid},
+  {id:'tree',   name:'Tree',   em:'🌲', fn:mkTree},
+  {id:'ring',   name:'Ring',   em:'💍', fn:mkRing},
 ];
 
-function ms(c,m,r){ return new THREE.MeshStandardMaterial({color:c,metalness:m||0,roughness:r||.5}); }
+function mat(c,m,r,opts){
+  var o=Object.assign({color:c,metalness:m||0,roughness:r||.5},opts||{});
+  return new THREE.MeshStandardMaterial(o);
+}
 
+// Each builder returns a Group. The group's local origin = bottom of model.
 function mkCube(){
   var g=new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.BoxGeometry(.18,.18,.18),ms(0x5599ff,.4,.3)));
-  return g;
+  var m=new THREE.Mesh(new THREE.BoxGeometry(.18,.18,.18),mat(0x5599ff,.4,.3));
+  m.position.y=.09; // sit on floor
+  m.castShadow=true;
+  g.add(m); return g;
 }
 function mkSphere(){
   var g=new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.SphereGeometry(.11,32,32),ms(0xff44cc,.7,.15)));
-  return g;
+  var m=new THREE.Mesh(new THREE.SphereGeometry(.1,32,32),mat(0xff44cc,.7,.15));
+  m.position.y=.1;
+  m.castShadow=true;
+  g.add(m); return g;
 }
 function mkTorus(){
   var g=new THREE.Group();
-  var m=new THREE.Mesh(new THREE.TorusGeometry(.11,.038,16,40),ms(0x44ffaa,.5,.2));
-  m.rotation.x=Math.PI/2; g.add(m); return g;
+  var m=new THREE.Mesh(new THREE.TorusGeometry(.1,.036,16,48),mat(0x44ffaa,.5,.2));
+  m.rotation.x=Math.PI/2;
+  m.position.y=.04;
+  m.castShadow=true;
+  g.add(m); return g;
 }
 function mkRocket(){
   var g=new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.16,12),ms(0xff8833,.5,.25)));
-  var nose=new THREE.Mesh(new THREE.ConeGeometry(.035,.09,12),ms(0xffffff,.2,.5));
-  nose.position.y=.125; g.add(nose);
-  [[.045,-0.07],[-.045,-0.07]].forEach(function(p){
-    var f=new THREE.Mesh(new THREE.BoxGeometry(.008,.055,.05),ms(0xff3333));
-    f.position.set(p[0],p[1],0); g.add(f);
+  var body=new THREE.Mesh(new THREE.CylinderGeometry(.032,.032,.15,12),mat(0xff8833,.5,.25));
+  body.position.y=.105; body.castShadow=true; g.add(body);
+  var nose=new THREE.Mesh(new THREE.ConeGeometry(.032,.08,12),mat(0xffffff,.2,.5));
+  nose.position.y=.215; nose.castShadow=true; g.add(nose);
+  [-1,1].forEach(function(s){
+    var f=new THREE.Mesh(new THREE.BoxGeometry(.007,.052,.045),mat(0xff3333));
+    f.position.set(s*.042,.048,0); f.castShadow=true; g.add(f);
   });
   return g;
 }
-function mkCrystal(){
+function mkGem(){
   var g=new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.OctahedronGeometry(.12,0),
-    new THREE.MeshStandardMaterial({color:0x99bbff,metalness:.95,roughness:.02,transparent:true,opacity:.82})));
-  return g;
+  var m=new THREE.Mesh(new THREE.OctahedronGeometry(.11,0),mat(0x99bbff,.95,.02,{transparent:true,opacity:.82}));
+  m.position.y=.11; m.castShadow=true;
+  g.add(m); return g;
 }
 function mkPyramid(){
   var g=new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.ConeGeometry(.13,.2,4),ms(0xffdd44,.25,.45)));
-  return g;
+  var m=new THREE.Mesh(new THREE.ConeGeometry(.12,.2,4),mat(0xffdd44,.25,.45));
+  m.position.y=.1; m.castShadow=true;
+  g.add(m); return g;
 }
 function mkTree(){
   var g=new THREE.Group();
-  var trunk=new THREE.Mesh(new THREE.CylinderGeometry(.018,.022,.09,8),ms(0x8B5E3C));
-  trunk.position.y=-.055; g.add(trunk);
-  [[.09,.13,.04,0x256b3a],[.07,.11,.12,0x2f9650],[.055,.095,.2,0x44bb66]].forEach(function(l){
-    var c=new THREE.Mesh(new THREE.ConeGeometry(l[0],l[1],8),ms(l[3]));
-    c.position.y=l[2]; g.add(c);
+  var trunk=new THREE.Mesh(new THREE.CylinderGeometry(.016,.02,.08,8),mat(0x8B5E3C));
+  trunk.position.y=.04; g.add(trunk);
+  [[.09,.13,.09,0x236b3a],[.075,.1,.16,0x2f9650],[.055,.08,.22,0x44bb66]].forEach(function(l){
+    var c=new THREE.Mesh(new THREE.ConeGeometry(l[0],l[1],8),mat(l[3]));
+    c.position.y=l[2]; c.castShadow=true; g.add(c);
   });
   return g;
 }
 function mkRing(){
   var g=new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.TorusGeometry(.09,.018,12,40),ms(0xffcc44,.92,.04)));
-  var gem=new THREE.Mesh(new THREE.OctahedronGeometry(.026),ms(0x55aaff,.85,.02));
-  gem.position.y=.09; g.add(gem); return g;
+  var r=new THREE.Mesh(new THREE.TorusGeometry(.08,.016,12,40),mat(0xffcc44,.92,.04));
+  r.rotation.x=Math.PI/2; r.position.y=.016; g.add(r);
+  var gem=new THREE.Mesh(new THREE.OctahedronGeometry(.024),mat(0x55aaff,.85,.02));
+  gem.position.y=.085; g.add(gem);
+  return g;
 }
 
-// ── SCENE SETUP ──────────────────────────────────────────────────────
-var scene, camera, renderer, reticle;
-var selId = MODELS[0].id;
-var placed = [];
-var scale  = 1.0;
-var surfaceFound = false;
+// ── STATE ─────────────────────────────────────────────────────────
+var scene,camera,renderer;
+var reticle; // THREE.Group
+var selId=MODELS[0].id;
+var placed=[];
+var userScale=1.0;
+var surfaceFound=false;
 
-// XR state
-var xrSession = null;
-var xrRefSpace = null;
-var hitTestSrc = null;
-var hitTestReady = false;
+var xrSession=null;
+var xrRefSpace=null;   // 'local'
+var viewerSpace=null;  // 'viewer'
+var hitTestSrc=null;
 
-// Preview state
-var prevObjs = [];
-var prevActive = false;
-var prevRAF = null;
+// Last valid hit pose — stored each frame so onSelect can read it
+var lastHitMatrix=null;
 
+var prevObjs=[];
+var prevActive=false;
+var prevRAF=null;
+
+// ── SCENE INIT ────────────────────────────────────────────────────
 function initScene(){
-  scene  = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.005, 50);
-  camera.position.set(0,.5,0);
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.005,50);
 
-  renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.setSize(innerWidth,innerHeight);
-  renderer.xr.enabled = true;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.xr.enabled=true;
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.domElement.style.cssText='position:fixed;inset:0;z-index:1;';
+  document.body.insertBefore(renderer.domElement,document.getElementById('hud'));
 
-  var c = renderer.domElement;
-  c.id = 'c';
-  document.body.insertBefore(c, document.getElementById('hud'));
+  scene.add(new THREE.AmbientLight(0xffffff,.7));
+  var sun=new THREE.DirectionalLight(0xffffff,1.2);
+  sun.position.set(2,4,2);
+  sun.castShadow=true;
+  scene.add(sun);
+  scene.add(new THREE.HemisphereLight(0xffffff,0x444444,.4));
 
-  // Lights
-  scene.add(new THREE.AmbientLight(0xffffff, .65));
-  var sun = new THREE.DirectionalLight(0xffffff, 1.1);
-  sun.position.set(1.5,3,2); sun.castShadow=true; scene.add(sun);
-  var fill = new THREE.PointLight(0x00ffb2,.7,5); fill.position.set(-1,1.5,-2); scene.add(fill);
+  buildReticle();
 
-  // Reticle — a flat ring + dot on the floor, like model-viewer
-  var rGroup = new THREE.Group();
-
-  // Outer ring
-  var outerRing = new THREE.Mesh(
-    new THREE.RingGeometry(0.09,0.105,48).rotateX(-Math.PI/2),
-    new THREE.MeshBasicMaterial({color:0x00FFB2,side:THREE.DoubleSide})
-  );
-  rGroup.add(outerRing);
-
-  // Inner dot
-  var dot = new THREE.Mesh(
-    new THREE.CircleGeometry(0.012,24).rotateX(-Math.PI/2),
-    new THREE.MeshBasicMaterial({color:0x00FFB2,side:THREE.DoubleSide})
-  );
-  rGroup.add(dot);
-
-  // Shadow disc underneath
-  var shadow = new THREE.Mesh(
-    new THREE.CircleGeometry(0.11,32).rotateX(-Math.PI/2),
-    new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.25,side:THREE.DoubleSide})
-  );
-  shadow.position.y = -.001;
-  rGroup.add(shadow);
-
-  rGroup.matrixAutoUpdate = false;
-  rGroup.visible = false;
-  scene.add(rGroup);
-  reticle = rGroup;
-
-  window.addEventListener('resize', function(){
-    camera.aspect = innerWidth/innerHeight;
+  window.addEventListener('resize',function(){
+    camera.aspect=innerWidth/innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(innerWidth,innerHeight);
   });
 }
 
-// ── PREVIEW LOOP (before AR) ─────────────────────────────────────────
-function startPreview(){
-  prevActive = true;
-  prevObjs.forEach(function(o){scene.remove(o);});
-  prevObjs = [];
+function buildReticle(){
+  reticle=new THREE.Group();
+  reticle.matrixAutoUpdate=false;
+  reticle.visible=false;
 
+  // Flat ring on floor
+  var ring=new THREE.Mesh(
+    new THREE.RingGeometry(.08,.095,40).rotateX(-Math.PI/2),
+    new THREE.MeshBasicMaterial({color:0x00FFB2,side:THREE.DoubleSide,depthWrite:false})
+  );
+  reticle.add(ring);
+
+  // Center dot
+  var dot=new THREE.Mesh(
+    new THREE.CircleGeometry(.01,20).rotateX(-Math.PI/2),
+    new THREE.MeshBasicMaterial({color:0x00FFB2,side:THREE.DoubleSide,depthWrite:false})
+  );
+  reticle.add(dot);
+
+  // Soft shadow blob
+  var blob=new THREE.Mesh(
+    new THREE.CircleGeometry(.1,32).rotateX(-Math.PI/2),
+    new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.22,side:THREE.DoubleSide,depthWrite:false})
+  );
+  blob.position.y=-.001;
+  reticle.add(blob);
+
+  scene.add(reticle);
+}
+
+// ── PREVIEW ───────────────────────────────────────────────────────
+function startPreview(){
+  prevActive=true;
   MODELS.forEach(function(m,i){
-    var obj = m.fn();
-    var a = (i/MODELS.length)*Math.PI*2;
-    obj.position.set(Math.cos(a)*1.3, 0, Math.sin(a)*1.3-4.5);
-    obj.userData.previewAngle = a;
-    obj.scale.setScalar(.85);
+    var obj=m.fn();
+    var a=(i/MODELS.length)*Math.PI*2;
+    var r=1.3;
+    obj.position.set(Math.cos(a)*r,-0.5,Math.sin(a)*r-4);
+    obj.scale.setScalar(.8);
     scene.add(obj); prevObjs.push(obj);
   });
-  camera.position.set(0,.4,0);
-  camera.lookAt(0,0,-4.5);
+  camera.position.set(0,0,0);
+  camera.lookAt(0,-.5,-4);
 
   var t=0;
   function loop(){
     if(!prevActive) return;
-    prevRAF = requestAnimationFrame(loop);
+    prevRAF=requestAnimationFrame(loop);
     t+=.005;
     prevObjs.forEach(function(o,i){
-      o.rotation.y+=.011;
-      o.position.y = Math.sin(t*1.1+i)*.1;
+      o.rotation.y+=.01;
+      o.position.y=-.5+Math.sin(t+i*.8)*.08;
     });
     renderer.render(scene,camera);
   }
@@ -535,255 +347,252 @@ function startPreview(){
 
 function stopPreview(){
   prevActive=false;
-  if(prevRAF){cancelAnimationFrame(prevRAF); prevRAF=null;}
+  if(prevRAF){cancelAnimationFrame(prevRAF);prevRAF=null;}
   prevObjs.forEach(function(o){scene.remove(o);}); prevObjs=[];
 }
 
-// ── AR SESSION ───────────────────────────────────────────────────────
+// ── AR SESSION ────────────────────────────────────────────────────
 function enterAR(){
-  if(!navigator.xr){ toast('WebXR not supported in this browser'); return; }
+  if(!navigator.xr){toast('WebXR not supported');return;}
 
   navigator.xr.requestSession('immersive-ar',{
-    requiredFeatures: ['hit-test'],
-    optionalFeatures: ['dom-overlay','anchors'],
-    domOverlay: { root: document.getElementById('hud') }
-  })
-  .then(function(session){
-    xrSession = session;
+    requiredFeatures:['hit-test'],
+    optionalFeatures:['dom-overlay'],
+    domOverlay:{root:document.getElementById('hud')}
+  }).then(function(session){
+    xrSession=session;
     renderer.xr.setReferenceSpaceType('local');
 
-    return renderer.xr.setSession(session).then(function(){
+    // Chain: setSession → local refspace → viewer refspace → hit test source
+    renderer.xr.setSession(session)
+    .then(function(){
       return session.requestReferenceSpace('local');
-    }).then(function(rs){
-      xrRefSpace = rs;
-
-      // Request viewer space for hit-test
+    })
+    .then(function(rs){
+      xrRefSpace=rs;
       return session.requestReferenceSpace('viewer');
-    }).then(function(viewerSpace){
-      return session.requestHitTestSource({space: viewerSpace});
-    }).then(function(src){
-      hitTestSrc = src;
-      hitTestReady = true;
+    })
+    .then(function(vs){
+      viewerSpace=vs;
+      return session.requestHitTestSource({space:vs});
+    })
+    .then(function(src){
+      hitTestSrc=src;
+      console.log('[AR] hit-test source ready');
+    })
+    .catch(function(e){
+      console.error('[AR] setup failed',e);
+      toast('Hit-test setup failed: '+e.message);
     });
-  })
-  .then(function(){
-    stopPreview();
-    xrSession.addEventListener('end', onSessionEnd);
-    xrSession.addEventListener('select', onSelect);
 
-    setBadge('● ACTIVE','');
-    setStatus('SLOWLY MOVE YOUR PHONE OVER A FLAT SURFACE');
-    setScanUI(true);
-    setTapHint(false);
+    session.addEventListener('end',onSessionEnd);
+    // 'select' fires on tap inside AR
+    session.addEventListener('select',onSelect);
+
+    stopPreview();
     document.getElementById('enter-ar').classList.add('gone');
-    surfaceFound = false;
+    setBadge('● ACTIVE');
+    setStatus('SLOWLY SWEEP YOUR CAMERA OVER A FLAT SURFACE');
+    showScan(true); showTap(false);
+    lastHitMatrix=null; surfaceFound=false;
 
     renderer.setAnimationLoop(arLoop);
   })
   .catch(function(e){
-    console.error('AR error',e);
-    toast('AR Error: '+e.message);
+    console.error('[AR] requestSession failed',e);
+    toast('Could not start AR: '+e.message);
   });
 }
 
 function onSessionEnd(){
-  hitTestSrc = null; hitTestReady = false;
-  xrSession = null; xrRefSpace = null;
   renderer.setAnimationLoop(null);
-  setBadge('● READY','');
-  setStatus('SELECT A MODEL AND TAP ENTER AR');
-  setScanUI(false); setTapHint(false);
+  hitTestSrc=null; xrRefSpace=null; viewerSpace=null; xrSession=null;
+  lastHitMatrix=null; surfaceFound=false;
+  reticle.visible=false;
   document.getElementById('enter-ar').classList.remove('gone');
-  reticle.visible = false;
-  surfaceFound = false;
+  setBadge('● READY');
+  setStatus('SELECT A MODEL · TAP ENTER AR');
+  showScan(false); showTap(false);
   startPreview();
 }
 
-// ── AR RENDER LOOP ────────────────────────────────────────────────────
-function arLoop(timestamp, frame){
-  if(!frame){ renderer.render(scene,camera); return; }
+// ── AR LOOP ───────────────────────────────────────────────────────
+function arLoop(ts,frame){
+  if(!frame){renderer.render(scene,camera);return;}
 
-  // Hit test
-  if(hitTestReady && hitTestSrc){
-    var hits = frame.getHitTestResults(hitTestSrc);
-    if(hits.length > 0){
-      var pose = hits[0].getPose(xrRefSpace);
+  // Run hit test every frame
+  if(hitTestSrc && xrRefSpace){
+    var hits=frame.getHitTestResults(hitTestSrc);
+    if(hits.length>0){
+      var pose=hits[0].getPose(xrRefSpace);
       if(pose){
-        reticle.visible = true;
+        // Apply pose to reticle
+        reticle.visible=true;
         reticle.matrix.fromArray(pose.transform.matrix);
 
+        // Store matrix for use in onSelect
+        lastHitMatrix=new THREE.Matrix4().fromArray(pose.transform.matrix);
+
         if(!surfaceFound){
-          surfaceFound = true;
-          setScanUI(false);
-          setTapHint(true);
-          setStatus('SURFACE FOUND — TAP ANYWHERE TO PLACE');
+          surfaceFound=true;
+          showScan(false);
+          showTap(true);
+          setStatus('SURFACE READY · TAP TO PLACE OBJECT');
         }
       }
     } else {
-      reticle.visible = false;
+      reticle.visible=false;
+      lastHitMatrix=null;
       if(surfaceFound){
-        surfaceFound = false;
-        setScanUI(true);
-        setTapHint(false);
-        setStatus('SLOWLY MOVE YOUR PHONE OVER A FLAT SURFACE');
+        surfaceFound=false;
+        showScan(true);
+        showTap(false);
+        setStatus('KEEP SCANNING… POINT AT A FLAT SURFACE');
       }
     }
   }
 
-  // Animate placed objects
-  var t = timestamp * 0.001;
+  // Animate placed objects (gentle float)
+  var t=ts*.001;
   placed.forEach(function(obj,i){
-    obj.rotation.y += .006;
-    if(obj.userData.baseY !== undefined){
-      obj.position.y = obj.userData.baseY + Math.sin(t*1.4+i*.7)*.012;
-    }
+    obj.userData.rot=(obj.userData.rot||0)+.006;
+    obj.rotation.y=obj.userData.rot;
+    obj.position.y=obj.userData.baseY+Math.sin(t*1.3+i*.9)*.012;
   });
 
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 
-// ── PLACE OBJECT ─────────────────────────────────────────────────────
+// ── PLACE OBJECT ─────────────────────────────────────────────────
 function onSelect(){
-  if(!reticle.visible) return;
+  // Must have a valid hit pose
+  if(!lastHitMatrix){
+    toast('No surface detected yet');
+    return;
+  }
 
-  var def = MODELS.find(function(m){return m.id===selId;});
-  var obj = def.fn();
+  var def=MODELS.find(function(m){return m.id===selId;});
+  var obj=def.fn();
 
-  // Decompose reticle matrix to get position/rotation
-  var pos = new THREE.Vector3();
-  var quat = new THREE.Quaternion();
-  var scl = new THREE.Vector3();
-  reticle.matrix.decompose(pos, quat, scl);
+  // Extract position and rotation from the hit matrix
+  var pos=new THREE.Vector3();
+  var quat=new THREE.Quaternion();
+  var scl=new THREE.Vector3();
+  lastHitMatrix.decompose(pos,quat,scl);
 
+  // Place at surface position, keeping only Y rotation (so model stands upright)
   obj.position.copy(pos);
-  obj.position.y += 0.01; // sit on surface
-  obj.userData.baseY = obj.position.y;
-  obj.scale.setScalar(0);
+  // Don't copy hit orientation (it can tilt the model) — just keep flat
+  obj.rotation.set(0,quat.y,0);
+
+  obj.userData.baseY=pos.y;
+  obj.userData.rot=0;
+
+  // Apply user scale
+  obj.scale.setScalar(userScale);
 
   scene.add(obj);
   placed.push(obj);
   updateCount();
-
-  // Pop-in animation
-  var s = 0, tgt = scale;
-  var iv = setInterval(function(){
-    s = Math.min(s + .07, 1);
-    var ease = 1 - Math.pow(1-s, 3); // ease-out cubic
-    obj.scale.setScalar(tgt * ease);
-    if(s>=1) clearInterval(iv);
-  }, 14);
-
   toast(def.em+' '+def.name+' placed!');
+
+  console.log('[AR] placed',def.name,'at',pos.x.toFixed(3),pos.y.toFixed(3),pos.z.toFixed(3),'scale',userScale);
 }
 
-// ── UI HELPERS ────────────────────────────────────────────────────────
-function setBadge(text, cls){
-  var b = document.getElementById('badge');
-  b.textContent = text;
-  b.className = 'badge' + (cls ? ' '+cls : '');
-}
-function setStatus(t){ document.getElementById('status-text').textContent = t; }
-function setScanUI(v){ document.getElementById('scan-ui').classList.toggle('show',v); }
-function setTapHint(v){ document.getElementById('tap-hint').classList.toggle('show',v); }
-function updateCount(){ document.getElementById('pcount').textContent = placed.length; }
+// ── UI HELPERS ────────────────────────────────────────────────────
+function setBadge(t){document.getElementById('badge').textContent=t;}
+function setStatus(t){document.getElementById('status-text').textContent=t;}
+function showScan(v){document.getElementById('scan-ui').classList.toggle('show',v);}
+function showTap(v){document.getElementById('tap-hint').classList.toggle('show',v);}
+function updateCount(){document.getElementById('pcnt').textContent=placed.length;}
 
 var toastT;
 function toast(msg){
-  var el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('on');
+  var el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('on');
   clearTimeout(toastT);
-  toastT = setTimeout(function(){el.classList.remove('on');}, 2600);
+  toastT=setTimeout(function(){el.classList.remove('on');},2500);
 }
 
-// ── BUILD TRAY ────────────────────────────────────────────────────────
+// ── BUILD TRAY ────────────────────────────────────────────────────
 function buildTray(){
-  var wrap = document.getElementById('cards');
+  var wrap=document.getElementById('cards');
   MODELS.forEach(function(m){
-    var card = document.createElement('div');
-    card.className = 'card'+(m.id===selId?' sel':'');
-    card.innerHTML = '<div class="em">'+m.em+'</div><div class="nm">'+m.name+'</div>';
+    var card=document.createElement('div');
+    card.className='card'+(m.id===selId?' sel':'');
+    card.innerHTML='<div class="em">'+m.em+'</div><div class="nm">'+m.name+'</div>';
     card.addEventListener('click',function(){
       document.querySelectorAll('.card').forEach(function(c){c.classList.remove('sel');});
       card.classList.add('sel');
-      selId = m.id;
+      selId=m.id;
       toast(m.em+' '+m.name+' selected');
     });
     wrap.appendChild(card);
   });
 }
 
-// ── BIND BUTTONS ─────────────────────────────────────────────────────
+// ── BUTTONS ──────────────────────────────────────────────────────
 function bindButtons(){
-  document.getElementById('btn-undo').addEventListener('click',function(){
-    if(!placed.length) return;
-    scene.remove(placed.pop()); updateCount(); toast('↩ Last object removed');
+  document.getElementById('b-undo').addEventListener('click',function(){
+    if(!placed.length)return;
+    scene.remove(placed.pop()); updateCount(); toast('↩ Removed last object');
   });
-  document.getElementById('btn-up').addEventListener('click',function(){
-    scale = Math.min(scale+.25, 4);
-    toast('Scale: '+scale.toFixed(2)+'×');
+  document.getElementById('b-up').addEventListener('click',function(){
+    userScale=Math.min(userScale+.25,4);
+    toast('Next size: '+userScale.toFixed(2)+'×');
   });
-  document.getElementById('btn-dn').addEventListener('click',function(){
-    scale = Math.max(scale-.25, .25);
-    toast('Scale: '+scale.toFixed(2)+'×');
+  document.getElementById('b-dn').addEventListener('click',function(){
+    userScale=Math.max(userScale-.25,.25);
+    toast('Next size: '+userScale.toFixed(2)+'×');
   });
-  document.getElementById('btn-clr').addEventListener('click',function(){
+  document.getElementById('b-clr').addEventListener('click',function(){
     placed.forEach(function(o){scene.remove(o);}); placed=[]; updateCount(); toast('All cleared');
   });
-  document.getElementById('enter-ar').addEventListener('click', enterAR);
+  document.getElementById('enter-ar').addEventListener('click',enterAR);
 }
 
-// ── LOADER PROGRESS ──────────────────────────────────────────────────
-function animLoader(cb){
-  var fill = document.getElementById('lbar-fill');
-  var pct = 0;
-  var iv = setInterval(function(){
-    pct += 4 + Math.random()*8;
-    fill.style.width = Math.min(pct,100)+'%';
-    if(pct >= 100){ clearInterval(iv); setTimeout(cb, 200); }
-  }, 60);
-}
-
-// ── AR SUPPORT CHECK ─────────────────────────────────────────────────
+// ── AR AVAILABILITY ───────────────────────────────────────────────
 function checkAR(){
-  if(!navigator.xr){
-    setUnavailable(); return;
-  }
+  if(!navigator.xr){markUnavailable();return;}
   navigator.xr.isSessionSupported('immersive-ar').then(function(ok){
-    if(!ok) setUnavailable();
-  }).catch(function(){ setUnavailable(); });
+    if(!ok) markUnavailable();
+  }).catch(markUnavailable);
+}
+function markUnavailable(){
+  var btn=document.getElementById('enter-ar');
+  btn.innerHTML='⚠ AR NOT AVAILABLE';
+  btn.classList.add('na');
+  btn.onclick=function(){toast('Use Chrome on Android with ARCore');};
+  setBadge('● NO WEBXR');
+  setTimeout(function(){toast('Open in Chrome on an ARCore-compatible Android device');},2000);
 }
 
-function setUnavailable(){
-  var btn = document.getElementById('enter-ar');
-  btn.innerHTML = '⚠ AR NOT AVAILABLE';
-  btn.classList.add('unavail');
-  btn.onclick = function(){
-    toast('Use Chrome on Android with ARCore support');
-  };
-  setBadge('● NO WEBXR','warn');
-  setTimeout(function(){
-    toast('Open this page in Chrome on an ARCore-compatible Android phone');
-  }, 2200);
+// ── LOADER ───────────────────────────────────────────────────────
+function runLoader(cb){
+  var fill=document.getElementById('lfill');
+  var p=0;
+  var iv=setInterval(function(){
+    p+=5+Math.random()*10;
+    fill.style.width=Math.min(p,100)+'%';
+    if(p>=100){clearInterval(iv);setTimeout(cb,150);}
+  },50);
 }
 
-// ── BOOT ─────────────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', function(){
-  animLoader(function(){
-    try {
+// ── BOOT ─────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',function(){
+  runLoader(function(){
+    try{
       initScene();
       buildTray();
       bindButtons();
       checkAR();
       startPreview();
-    } catch(e){
+    }catch(e){
       console.error(e);
-      document.getElementById('loader').innerHTML =
-        '<h1 style="color:'+('var(--neon2)')+'">ERROR</h1>' +
-        '<p style="color:rgba(255,255,255,.4);font-family:monospace;font-size:.75rem;margin-top:1rem;max-width:300px;text-align:center">'+e.message+'</p>';
+      document.getElementById('loader').innerHTML='<h1 style="color:#FF2D6B">ERROR</h1><p style="color:rgba(255,255,255,.4);font-family:monospace;font-size:.75rem;margin-top:1rem;max-width:280px;text-align:center">'+e.message+'</p>';
       return;
     }
-
-    var ld = document.getElementById('loader');
+    var ld=document.getElementById('loader');
     ld.style.opacity='0';
     setTimeout(function(){ld.remove();},500);
   });
