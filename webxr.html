@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
-:root{--neon:#00FFB2;--red:#FF2D6B;--dark:#070A0E;}
+:root{--neon:#00FFB2;--orange:#FF8C00;--blue:#4488FF;--red:#FF2D6B;--dark:#070A0E;}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{background:var(--dark);color:#fff;font-family:'Syne',sans-serif;height:100vh;overflow:hidden;user-select:none;}
 
@@ -19,18 +19,24 @@ body{background:var(--dark);color:#fff;font-family:'Syne',sans-serif;height:100v
 
 #hud{position:fixed;inset:0;z-index:10;pointer-events:none;}
 
-#topbar{pointer-events:all;position:absolute;top:0;left:0;right:0;padding:1rem 1.2rem;background:linear-gradient(to bottom,rgba(7,10,14,.92),transparent);display:flex;align-items:center;justify-content:space-between;}
-.logo{font-weight:800;font-size:1.1rem;letter-spacing:-1px;}.logo b{color:var(--neon);}
-.badge{font-family:'Space Mono',monospace;font-size:.55rem;letter-spacing:1.5px;border:1px solid rgba(0,255,178,.3);border-radius:99px;padding:.25rem .75rem;color:var(--neon);transition:all .3s;}
+#topbar{pointer-events:all;position:absolute;top:0;left:0;right:0;padding:1rem 1.2rem;background:linear-gradient(to bottom,rgba(7,10,14,.92),transparent);display:flex;align-items:center;justify-content:space-between;gap:.6rem;}
+.logo{font-weight:800;font-size:1.1rem;letter-spacing:-1px;flex-shrink:0;}.logo b{color:var(--neon);}
+.badge{font-family:'Space Mono',monospace;font-size:.52rem;letter-spacing:1px;border:1px solid rgba(0,255,178,.3);border-radius:99px;padding:.22rem .65rem;color:var(--neon);transition:all .3s;flex-shrink:0;}
 .badge.warn{color:var(--red);border-color:rgba(255,45,107,.35);}
 
+/* SURFACE TYPE indicator */
+#surf-type{font-family:'Space Mono',monospace;font-size:.52rem;letter-spacing:1px;border-radius:99px;padding:.22rem .65rem;transition:all .3s;flex-shrink:0;border:1px solid transparent;}
+#surf-type.floor{color:var(--neon);border-color:rgba(0,255,178,.3);}
+#surf-type.wall{color:var(--orange);border-color:rgba(255,140,0,.35);}
+#surf-type.ceiling{color:var(--blue);border-color:rgba(68,136,255,.35);}
+
 #status-wrap{position:absolute;top:3.8rem;left:50%;transform:translateX(-50%);pointer-events:none;}
-#status-text{font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:1.8px;color:rgba(255,255,255,.5);background:rgba(7,10,14,.55);backdrop-filter:blur(6px);border-radius:99px;padding:.3rem .9rem;border:1px solid rgba(255,255,255,.06);white-space:nowrap;}
+#status-text{font-family:'Space Mono',monospace;font-size:.56rem;letter-spacing:1.5px;color:rgba(255,255,255,.5);background:rgba(7,10,14,.55);backdrop-filter:blur(6px);border-radius:99px;padding:.3rem .9rem;border:1px solid rgba(255,255,255,.06);white-space:nowrap;}
 
 /* MODE PILL */
 #mode-pill{pointer-events:all;position:absolute;top:5rem;left:50%;transform:translateX(-50%);display:none;border-radius:99px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:rgba(7,10,14,.8);backdrop-filter:blur(10px);}
 #mode-pill.show{display:flex;}
-.mpb{font-family:'Space Mono',monospace;font-size:.55rem;letter-spacing:1.5px;padding:.4rem .95rem;cursor:pointer;border:none;background:transparent;color:rgba(255,255,255,.4);transition:all .2s;touch-action:manipulation;}
+.mpb{font-family:'Space Mono',monospace;font-size:.52rem;letter-spacing:1.2px;padding:.38rem .85rem;cursor:pointer;border:none;background:transparent;color:rgba(255,255,255,.4);transition:all .2s;touch-action:manipulation;}
 .mpb.on{background:var(--neon);color:#000;font-weight:700;}
 
 /* SCAN UI */
@@ -41,34 +47,32 @@ body{background:var(--dark);color:#fff;font-family:'Syne',sans-serif;height:100v
 .r1{width:36px;height:36px;}.r2{width:60px;height:60px;animation-delay:.25s;opacity:.6;}.r3{width:88px;height:88px;animation-delay:.5s;opacity:.3;}
 .ch{width:12px;height:12px;position:relative;}
 .ch::before,.ch::after{content:'';position:absolute;background:var(--neon);}
-.ch::before{width:2px;height:12px;left:5px;top:0;}
-.ch::after{width:12px;height:2px;top:5px;left:0;}
+.ch::before{width:2px;height:12px;left:5px;top:0;}.ch::after{width:12px;height:2px;top:5px;left:0;}
 @keyframes rp{0%,100%{transform:scale(1);}50%{transform:scale(.9);opacity:.3;}}
-.scan-lbl{font-family:'Space Mono',monospace;font-size:.58rem;color:rgba(255,255,255,.45);letter-spacing:2px;}
+.scan-lbl{font-family:'Space Mono',monospace;font-size:.56rem;color:rgba(255,255,255,.45);letter-spacing:2px;text-align:center;line-height:1.8;}
 
-/* TAP HINT */
+/* PLACE HINT — adapts color per surface type */
 #tap-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.6rem;opacity:0;transition:opacity .4s;}
 #tap-hint.show{opacity:1;}
-.tap-ring{width:52px;height:52px;border-radius:50%;border:2px solid var(--neon);animation:ping 1.5s ease-out infinite;}
-@keyframes ping{0%{box-shadow:0 0 0 0 rgba(0,255,178,.5);}70%{box-shadow:0 0 0 16px rgba(0,255,178,0);}100%{box-shadow:0 0 0 0 rgba(0,255,178,0);}}
+.tap-ring{width:52px;height:52px;border-radius:50%;border:2px solid var(--tap-color,var(--neon));animation:ping 1.5s ease-out infinite;}
+@keyframes ping{0%{box-shadow:0 0 0 0 var(--tap-glow,rgba(0,255,178,.5));}70%{box-shadow:0 0 0 16px transparent;}100%{box-shadow:0 0 0 0 transparent;}}
 .tap-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:1.3rem;}
-.tap-lbl{font-family:'Space Mono',monospace;font-size:.58rem;color:var(--neon);letter-spacing:2px;}
+.tap-lbl{font-family:'Space Mono',monospace;font-size:.56rem;letter-spacing:2px;}
 
-/* MOVE HINT */
+/* MOVE / GRAB */
 #move-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.7rem;opacity:0;transition:opacity .4s;text-align:center;}
 #move-hint.show{opacity:1;}
 .move-ring{width:56px;height:56px;border-radius:50%;border:2px dashed var(--neon);animation:spin 3s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .move-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:1.3rem;}
-.move-lbl{font-family:'Space Mono',monospace;font-size:.55rem;color:var(--neon);letter-spacing:1.5px;max-width:220px;line-height:1.8;}
+.move-lbl{font-family:'Space Mono',monospace;font-size:.53rem;color:var(--neon);letter-spacing:1.2px;max-width:200px;line-height:1.8;}
 
-/* GRABBED INDICATOR */
 #grabbed-indicator{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:none;flex-direction:column;align-items:center;gap:.6rem;}
 #grabbed-indicator.show{display:flex;}
 .grab-ring{width:60px;height:60px;border-radius:50%;border:2px solid var(--neon);box-shadow:0 0 20px rgba(0,255,178,.4);animation:grab-pulse 1s ease-in-out infinite;}
 @keyframes grab-pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.6;transform:scale(.94);}}
 .grab-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:1.2rem;}
-.grab-lbl{font-family:'Space Mono',monospace;font-size:.55rem;color:var(--neon);letter-spacing:1.5px;}
+.grab-lbl{font-family:'Space Mono',monospace;font-size:.53rem;color:var(--neon);letter-spacing:1.2px;}
 
 /* RAIL */
 #rail{pointer-events:all;position:absolute;right:.9rem;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:.5rem;}
@@ -116,6 +120,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;b
 <div id="hud">
   <div id="topbar">
     <div class="logo">AR <b>ZONE</b></div>
+    <div id="surf-type"></div>
     <div class="badge" id="badge">● READY</div>
   </div>
   <div id="status-wrap"><span id="status-text">SELECT A MODEL · TAP ENTER AR</span></div>
@@ -130,14 +135,14 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;b
       <div class="ring r3"></div><div class="ring r2"></div><div class="ring r1"></div>
       <div class="ch"></div>
     </div>
-    <div class="scan-lbl">SCANNING SURFACE…</div>
+    <div class="scan-lbl">POINT AT ANY SURFACE<br>FLOOR · WALL · CEILING</div>
   </div>
 
   <div id="tap-hint">
     <div style="position:relative;width:52px;height:52px;">
       <div class="tap-ring"></div><div class="tap-icon">👆</div>
     </div>
-    <div class="tap-lbl">TAP TO PLACE</div>
+    <div class="tap-lbl" id="tap-lbl-text" style="color:var(--neon);">TAP TO PLACE</div>
   </div>
 
   <div id="move-hint">
@@ -194,9 +199,7 @@ var MODELS=[
   {id:'tree',   name:'Tree',   em:'🌲', fn:mkTree},
   {id:'ring',   name:'Ring',   em:'💍', fn:mkRing},
 ];
-
 function mat(c,m,r,x){return new THREE.MeshStandardMaterial(Object.assign({color:c,metalness:m||0,roughness:r||.5},x||{}));}
-
 function mkCube(){var g=new THREE.Group();var m=new THREE.Mesh(new THREE.BoxGeometry(.18,.18,.18),mat(0x5599ff,.4,.3));m.position.y=.09;m.castShadow=true;g.add(m);return g;}
 function mkSphere(){var g=new THREE.Group();var m=new THREE.Mesh(new THREE.SphereGeometry(.1,32,32),mat(0xff44cc,.7,.15));m.position.y=.1;m.castShadow=true;g.add(m);return g;}
 function mkTorus(){var g=new THREE.Group();var m=new THREE.Mesh(new THREE.TorusGeometry(.1,.036,16,48),mat(0x44ffaa,.5,.2));m.rotation.x=Math.PI/2;m.position.y=.04;m.castShadow=true;g.add(m);return g;}
@@ -224,12 +227,10 @@ function mkRing(){
 
 function setHighlight(obj,on){
   obj.traverse(function(child){
-    if(!child.isMesh) return;
+    if(!child.isMesh)return;
     if(on){
       if(!child.userData._origEm){child.userData._origEm=child.material.emissive?child.material.emissive.clone():new THREE.Color(0,0,0);child.userData._origEi=child.material.emissiveIntensity||0;}
-      child.material=child.material.clone();
-      child.material.emissive=new THREE.Color(0x00ffb2);
-      child.material.emissiveIntensity=.4;
+      child.material=child.material.clone();child.material.emissive=new THREE.Color(0x00ffb2);child.material.emissiveIntensity=.4;
     } else {
       if(child.userData._origEm){child.material=child.material.clone();child.material.emissive=child.userData._origEm;child.material.emissiveIntensity=child.userData._origEi;}
     }
@@ -237,28 +238,35 @@ function setHighlight(obj,on){
 }
 
 // ── STATE ─────────────────────────────────────────────────────
-var scene,camera,renderer,reticle;
+var scene,camera,renderer;
+var reticleFloor,reticleWall,reticleCeiling; // 3 reticles, one shown per surface type
 var selId=MODELS[0].id;
 var placed=[];
 var userScale=1.0;
 var surfaceFound=false;
-var mode='place'; // 'place' | 'move'
+var mode='place';
 var grabbedObj=null;
 
-// XR — these are the only XR vars that matter
 var xrSession=null;
-var xrRefSpace=null;    // 'local' — used for hit test pose
-var hitTestSrc=null;    // THE hit test source, requested once at session start
-var lastHitPos=null;    // THREE.Vector3 — updated every frame when surface found
+var xrRefSpace=null;
 
-// Preview
+// THREE hit-test sources for different ray directions
+var hitSrcCenter=null;   // straight ahead  → walls
+var hitSrcDown=null;     // angled down      → floors
+var hitSrcUp=null;       // angled up        → ceilings
+
+// Current best hit result
+var lastHitPos=null;       // THREE.Vector3
+var lastHitNormal=null;    // THREE.Vector3 — surface normal from hit matrix
+var lastSurfaceType='floor'; // 'floor' | 'wall' | 'ceiling'
+var lastHitMatrix4=null;    // THREE.Matrix4
+
 var prevObjs=[],prevActive=false,prevRAF=null;
 
-// ── SCENE ────────────────────────────────────────────────────
+// ── SCENE INIT ─────────────────────────────────────────────────
 function initScene(){
   scene=new THREE.Scene();
   camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.005,50);
-
   renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.setSize(innerWidth,innerHeight);
@@ -272,33 +280,37 @@ function initScene(){
   var sun=new THREE.DirectionalLight(0xffffff,1.2);sun.position.set(2,4,2);sun.castShadow=true;scene.add(sun);
   scene.add(new THREE.HemisphereLight(0xffffff,0x444444,.35));
 
-  // RETICLE — flat ring sitting on the surface
-  reticle=new THREE.Group();
-  reticle.matrixAutoUpdate=false;
-  reticle.visible=false;
-  reticle.add(new THREE.Mesh(
-    new THREE.RingGeometry(.08,.095,40).rotateX(-Math.PI/2),
-    new THREE.MeshBasicMaterial({color:0x00FFB2,side:THREE.DoubleSide,depthWrite:false})
-  ));
-  reticle.add(new THREE.Mesh(
-    new THREE.CircleGeometry(.01,20).rotateX(-Math.PI/2),
-    new THREE.MeshBasicMaterial({color:0x00FFB2,side:THREE.DoubleSide,depthWrite:false})
-  ));
-  var blob=new THREE.Mesh(new THREE.CircleGeometry(.1,32).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.2,side:THREE.DoubleSide,depthWrite:false}));
-  blob.position.y=-.001;reticle.add(blob);
-  scene.add(reticle);
-
+  buildReticles();
   window.addEventListener('resize',function(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+}
+
+function makeReticle(color){
+  var g=new THREE.Group();
+  g.matrixAutoUpdate=false;g.visible=false;
+  g.add(new THREE.Mesh(new THREE.RingGeometry(.07,.085,40).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:color,side:THREE.DoubleSide,depthWrite:false})));
+  g.add(new THREE.Mesh(new THREE.CircleGeometry(.01,20).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:color,side:THREE.DoubleSide,depthWrite:false})));
+  var blob=new THREE.Mesh(new THREE.CircleGeometry(.09,32).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.18,side:THREE.DoubleSide,depthWrite:false}));
+  blob.position.y=-.001;g.add(blob);
+  scene.add(g);
+  return g;
+}
+
+function buildReticles(){
+  reticleFloor   =makeReticle(0x00FFB2); // green  — floor
+  reticleWall    =makeReticle(0xFF8C00); // orange — wall
+  reticleCeiling =makeReticle(0x4488FF); // blue   — ceiling
+}
+
+function hideAllReticles(){
+  reticleFloor.visible=false;
+  reticleWall.visible=false;
+  reticleCeiling.visible=false;
 }
 
 // ── PREVIEW ─────────────────────────────────────────────────
 function startPreview(){
   prevActive=true;
-  MODELS.forEach(function(m,i){
-    var obj=m.fn();var a=(i/MODELS.length)*Math.PI*2;
-    obj.position.set(Math.cos(a)*1.3,-.5,Math.sin(a)*1.3-4);obj.scale.setScalar(.8);
-    scene.add(obj);prevObjs.push(obj);
-  });
+  MODELS.forEach(function(m,i){var obj=m.fn();var a=(i/MODELS.length)*Math.PI*2;obj.position.set(Math.cos(a)*1.3,-.5,Math.sin(a)*1.3-4);obj.scale.setScalar(.8);scene.add(obj);prevObjs.push(obj);});
   camera.position.set(0,0,0);camera.lookAt(0,-.5,-4);
   var t=0;
   function loop(){if(!prevActive)return;prevRAF=requestAnimationFrame(loop);t+=.005;prevObjs.forEach(function(o,i){o.rotation.y+=.01;o.position.y=-.5+Math.sin(t+i*.8)*.08;});renderer.render(scene,camera);}
@@ -307,11 +319,13 @@ function startPreview(){
 function stopPreview(){prevActive=false;if(prevRAF){cancelAnimationFrame(prevRAF);prevRAF=null;}prevObjs.forEach(function(o){scene.remove(o);});prevObjs=[];}
 
 // ── AR SESSION ───────────────────────────────────────────────
-// KEY FIX: request hit-test source ONCE, sequentially, before starting the render loop.
-// Do NOT request it inside the render loop. Do NOT use async/await (some browsers mis-handle it here).
+// We request THREE hit-test sources with offset rays:
+//   1. Straight ahead (direction: 0,0,-1) — catches walls
+//   2. Angled 45° down (direction: 0,-0.7,-0.7 normalised) — catches floors
+//   3. Angled 45° up  (direction: 0,+0.7,-0.7 normalised) — catches ceilings
+// Each frame we pick the hit result closest to the camera's look direction's surface type.
 function enterAR(){
   if(!navigator.xr){toast('WebXR not supported');return;}
-
   navigator.xr.requestSession('immersive-ar',{
     requiredFeatures:['hit-test'],
     optionalFeatures:['dom-overlay'],
@@ -319,100 +333,184 @@ function enterAR(){
   }).then(function(session){
     xrSession=session;
     renderer.xr.setReferenceSpaceType('local');
-
-    // Step 1: bind session to renderer
     renderer.xr.setSession(session).then(function(){
-
-      // Step 2: get the local reference space (for reading hit poses)
       session.requestReferenceSpace('local').then(function(localSpace){
         xrRefSpace=localSpace;
-
-        // Step 3: get viewer space (camera space — needed for hit-test source)
         session.requestReferenceSpace('viewer').then(function(viewerSpace){
 
-          // Step 4: create hit test source FROM viewer space
-          session.requestHitTestSource({space:viewerSpace}).then(function(src){
-            hitTestSrc=src;
-            console.log('[AR] hit-test source OK');
+          // Request three hit-test sources with different offset rays
+          var srcCenter,srcDown,srcUp;
 
-            // Step 5: NOW start everything
+          // 1. Straight ahead — good for walls
+          session.requestHitTestSourceWithOFFSETRay
+            ? void 0
+            : null; // not all browsers support offsetRay — we use plain viewer space and rely on camera tilt
+
+          // We use a single hit-test source from viewer space.
+          // The viewer space already points where the camera points.
+          // So if you point at a wall, you get wall hits; floor → floor hits.
+          // To cover all surfaces we request 3 sources with manually offset rays.
+          // offsetRay is a XRRay — supported in Chrome Android ARCore.
+          var readyCount=0;
+          function tryStart(){readyCount++;if(readyCount===3) onAllReady();}
+
+          try{
+            // Ray straight ahead (hits walls)
+            session.requestHitTestSource({
+              space: viewerSpace,
+              offsetRay: new XRRay({x:0,y:0,z:0,w:1},{x:0,y:0,z:-1,w:0})
+            }).then(function(s){hitSrcCenter=s;tryStart();}).catch(function(){tryStart();});
+
+            // Ray tilted 50° down from camera (hits floors when looking forward/slightly down)
+            session.requestHitTestSource({
+              space: viewerSpace,
+              offsetRay: new XRRay({x:0,y:0,z:0,w:1},{x:0,y:-.766,z:-.643,w:0})
+            }).then(function(s){hitSrcDown=s;tryStart();}).catch(function(){tryStart();});
+
+            // Ray tilted 50° up (hits ceilings when looking forward/slightly up)
+            session.requestHitTestSource({
+              space: viewerSpace,
+              offsetRay: new XRRay({x:0,y:.766,z:-.643,w:0},{x:0,y:.766,z:-.643,w:0})
+            }).then(function(s){hitSrcUp=s;tryStart();}).catch(function(){tryStart();});
+
+          } catch(e) {
+            // XRRay with offset not available — fall back to single straight viewer hit-test
+            console.warn('[AR] offsetRay not supported, using single hit-test source');
+            session.requestHitTestSource({space:viewerSpace}).then(function(s){
+              hitSrcCenter=s;hitSrcDown=null;hitSrcUp=null;
+              onAllReady();
+            }).catch(function(e2){toast('Hit-test failed: '+e2.message);session.end();});
+          }
+
+          function onAllReady(){
             session.addEventListener('end',onSessionEnd);
             session.addEventListener('select',onTap);
-
             stopPreview();
             document.getElementById('enter-ar').classList.add('gone');
             document.getElementById('mode-pill').classList.add('show');
             setBadge('● ACTIVE');
-            setStatus('SLOWLY SWEEP YOUR CAMERA OVER A FLAT SURFACE');
+            setStatus('POINT AT FLOOR · WALL · OR CEILING');
             showScan(true);showTap(false);showMoveHint(false);showGrabbed(false);
             lastHitPos=null;surfaceFound=false;
             setModeUI('place');
-
             renderer.setAnimationLoop(arLoop);
+          }
 
-          }).catch(function(e){console.error('[AR] requestHitTestSource failed',e);toast('Hit-test failed: '+e.message);session.end();});
-        }).catch(function(e){console.error('[AR] viewer refspace failed',e);toast('Viewer space failed: '+e.message);session.end();});
-      }).catch(function(e){console.error('[AR] local refspace failed',e);toast('Local space failed: '+e.message);session.end();});
-    }).catch(function(e){console.error('[AR] setSession failed',e);toast('Session failed: '+e.message);});
-
-  }).catch(function(e){
-    console.error('[AR] requestSession failed',e);
-    toast('Could not start AR: '+e.message);
-  });
+        }).catch(function(e){toast('Viewer space error: '+e.message);session.end();});
+      }).catch(function(e){toast('Local space error: '+e.message);session.end();});
+    }).catch(function(e){toast('setSession error: '+e.message);});
+  }).catch(function(e){toast('Could not start AR: '+e.message);});
 }
 
 function onSessionEnd(){
   renderer.setAnimationLoop(null);
   if(grabbedObj){setHighlight(grabbedObj,false);grabbedObj=null;}
-  hitTestSrc=null;xrRefSpace=null;xrSession=null;lastHitPos=null;surfaceFound=false;
-  reticle.visible=false;
+  hitSrcCenter=hitSrcDown=hitSrcUp=null;
+  xrRefSpace=null;xrSession=null;lastHitPos=null;lastHitNormal=null;surfaceFound=false;
+  hideAllReticles();
   document.getElementById('enter-ar').classList.remove('gone');
   document.getElementById('mode-pill').classList.remove('show');
+  document.getElementById('surf-type').textContent='';
   setBadge('● READY');setStatus('SELECT A MODEL · TAP ENTER AR');
   showScan(false);showTap(false);showMoveHint(false);showGrabbed(false);
   startPreview();
 }
 
-// ── AR RENDER LOOP ───────────────────────────────────────────
+// ── CLASSIFY SURFACE FROM HIT MATRIX ────────────────────────
+// Extract the Y component of the surface normal from the hit pose matrix.
+// Hit pose matrix columns: [right, up, -forward, position]
+// Normal of the hit surface = column 1 (up vector of the hit pose) = m[4],m[5],m[6]
+// If normal.y > 0.6  → floor (normal pointing up)
+// If normal.y < -0.6 → ceiling (normal pointing down)
+// Otherwise         → wall (normal mostly horizontal)
+function classifySurface(m){
+  var ny=m[5]; // Y component of the hit surface normal
+  if(ny>0.5) return 'floor';
+  if(ny<-0.5) return 'ceiling';
+  return 'wall';
+}
+
+// ── AR LOOP ─────────────────────────────────────────────────
 function arLoop(ts,frame){
   if(!frame){renderer.render(scene,camera);return;}
 
-  // Hit test — hitTestSrc must be ready (set in enterAR above)
-  if(hitTestSrc && xrRefSpace){
-    var hits=frame.getHitTestResults(hitTestSrc);
-    if(hits.length>0){
-      var pose=hits[0].getPose(xrRefSpace);
-      if(pose){
-        // Extract position from hit pose
-        var m=pose.transform.matrix;
-        var hitPos=new THREE.Vector3(m[12],m[13],m[14]);
-        lastHitPos=hitPos;
+  var bestHitPos=null,bestMatrix=null,bestType=null;
 
-        // Update reticle
-        reticle.visible=true;
-        reticle.matrix.fromArray(m);
+  // Gather results from all three hit-test sources
+  // Priority: pick the hit whose surface normal best aligns with camera look direction
+  var camDir=new THREE.Vector3();
+  camera.getWorldDirection(camDir);
 
-        // If grabbed object: follow the hit position live
-        if(mode==='move' && grabbedObj){
-          grabbedObj.position.set(hitPos.x,hitPos.y,hitPos.z);
-          grabbedObj.userData.baseY=hitPos.y;
-        }
+  function evalSource(src){
+    if(!src||!xrRefSpace) return;
+    var hits=frame.getHitTestResults(src);
+    if(!hits.length) return;
+    var pose=hits[0].getPose(xrRefSpace);
+    if(!pose) return;
+    var m=pose.transform.matrix;
+    var type=classifySurface(m);
+    var pos=new THREE.Vector3(m[12],m[13],m[14]);
 
-        if(!surfaceFound){
-          surfaceFound=true;
-          showScan(false);
-          if(mode==='place'){showTap(true);setStatus('SURFACE FOUND · TAP TO PLACE');}
-          else if(!grabbedObj){showMoveHint(true);setStatus('POINT AT OBJECT · TAP TO GRAB');}
-        }
-      }
+    // Score this hit: prefer hit closest to where camera is pointing
+    // Use camera→hit direction alignment
+    var camPos=new THREE.Vector3();
+    camera.getWorldPosition(camPos);
+    var toHit=new THREE.Vector3().subVectors(pos,camPos).normalize();
+    var alignment=toHit.dot(camDir); // 1 = perfect alignment
+
+    if(!bestHitPos || alignment > (bestScore||0)){
+      bestHitPos=pos;
+      bestMatrix=m;
+      bestType=type;
+      bestScore=alignment;
+    }
+  }
+  var bestScore=null;
+  evalSource(hitSrcCenter);
+  evalSource(hitSrcDown);
+  evalSource(hitSrcUp);
+
+  if(bestHitPos && bestType){
+    lastHitPos=bestHitPos;
+    lastSurfaceType=bestType;
+    lastHitMatrix4=new THREE.Matrix4().fromArray(bestMatrix);
+
+    // Show the right coloured reticle
+    hideAllReticles();
+    var activeReticle = bestType==='floor'?reticleFloor : bestType==='wall'?reticleWall : reticleCeiling;
+
+    if(mode==='place' || (mode==='move' && grabbedObj)){
+      activeReticle.visible=true;
+      activeReticle.matrix.fromArray(bestMatrix);
+    }
+
+    // Update grabbed object position
+    if(mode==='move' && grabbedObj){
+      grabbedObj.position.copy(bestHitPos);
+      grabbedObj.userData.baseY=bestHitPos.y;
+    }
+
+    // Update surface type indicator
+    setSurfaceType(bestType);
+
+    if(!surfaceFound){
+      surfaceFound=true;
+      showScan(false);
+      if(mode==='place'){showTap(true);}
+      else if(!grabbedObj){showMoveHint(true);}
+      updateStatusForSurface(bestType);
     } else {
-      reticle.visible=false;
-      lastHitPos=null;
-      if(surfaceFound){
-        surfaceFound=false;
-        showTap(false);showMoveHint(false);
-        if(!grabbedObj){showScan(true);setStatus('SLOWLY SWEEP YOUR CAMERA OVER A FLAT SURFACE');}
-      }
+      updateStatusForSurface(bestType);
+    }
+
+  } else {
+    hideAllReticles();
+    lastHitPos=null;
+    if(surfaceFound){
+      surfaceFound=false;
+      showTap(false);showMoveHint(false);
+      if(!grabbedObj){showScan(true);setStatus('POINT AT FLOOR · WALL · OR CEILING');}
+      setSurfaceType('');
     }
   }
 
@@ -420,73 +518,109 @@ function arLoop(ts,frame){
   var t=ts*.001;
   placed.forEach(function(obj,i){
     if(obj===grabbedObj)return;
-    obj.userData.rot=(obj.userData.rot||0)+.006;
+    obj.userData.rot=(obj.userData.rot||0)+.005;
     obj.rotation.y=obj.userData.rot;
-    if(obj.userData.baseY!==undefined) obj.position.y=obj.userData.baseY+Math.sin(t*1.3+i*.9)*.012;
+    // Only float on floor objects; wall/ceiling objects stay fixed
+    if(obj.userData.surfaceType==='floor' && obj.userData.baseY!==undefined){
+      obj.position.y=obj.userData.baseY+Math.sin(t*1.3+i*.9)*.01;
+    }
   });
 
   renderer.render(scene,camera);
 }
 
-// ── TAP HANDLER ──────────────────────────────────────────────
-function onTap(){
+function updateStatusForSurface(type){
   if(mode==='place'){
-    doPlace();
-  } else {
-    doMoveAction();
+    if(type==='floor')   setStatus('FLOOR DETECTED · TAP TO PLACE');
+    else if(type==='wall')    setStatus('WALL DETECTED · TAP TO PLACE');
+    else if(type==='ceiling') setStatus('CEILING DETECTED · TAP TO PLACE');
+  } else if(!grabbedObj){
+    setStatus('POINT AT OBJECT · TAP TO GRAB');
   }
 }
 
+// ── TAP ─────────────────────────────────────────────────────
+function onTap(){
+  if(mode==='place') doPlace();
+  else doMoveAction();
+}
+
 function doPlace(){
-  if(!lastHitPos){toast('No surface detected yet — keep scanning');return;}
+  if(!lastHitPos){toast('No surface detected — keep scanning');return;}
   var def=MODELS.find(function(m){return m.id===selId;});
   var obj=def.fn();
+
+  // Position at hit
   obj.position.copy(lastHitPos);
   obj.userData.baseY=lastHitPos.y;
   obj.userData.rot=0;
+  obj.userData.surfaceType=lastSurfaceType;
+
+  // Orient object relative to surface normal using the hit matrix
+  // For walls/ceiling: align the object so it "sticks" to the surface
+  if(lastHitMatrix4 && (lastSurfaceType==='wall'||lastSurfaceType==='ceiling')){
+    // Extract the hit pose rotation — but only use it partially
+    // We want the object to face out from the wall, not tilt randomly
+    var q=new THREE.Quaternion();
+    var p=new THREE.Vector3();
+    var s=new THREE.Vector3();
+    lastHitMatrix4.decompose(p,q,s);
+
+    // Get surface normal (local Y of hit pose = column 1 of matrix)
+    var m=lastHitMatrix4.elements;
+    var nx=m[4],ny=m[5],nz=m[6]; // surface normal
+
+    if(lastSurfaceType==='wall'){
+      // Rotate object so its "up" aligns with surface normal
+      // This makes it appear to sit against the wall
+      var surfNormal=new THREE.Vector3(nx,ny,nz).normalize();
+      var up=new THREE.Vector3(0,1,0);
+      var quat=new THREE.Quaternion().setFromUnitVectors(up,surfNormal);
+      obj.quaternion.copy(quat);
+    } else if(lastSurfaceType==='ceiling'){
+      // Flip upside-down
+      obj.rotation.set(Math.PI,0,0);
+    }
+  } else {
+    obj.rotation.set(0,0,0);
+  }
+
   obj.scale.setScalar(0);
   scene.add(obj);placed.push(obj);updateCount();
-  toast(def.em+' '+def.name+' placed!');
-  // pop-in ease
-  var s=0,tgt=userScale;
-  var iv=setInterval(function(){s=Math.min(s+.07,1);obj.scale.setScalar(tgt*(1-Math.pow(1-s,3)));if(s>=1)clearInterval(iv);},14);
+  var emoji=lastSurfaceType==='floor'?'🟢':lastSurfaceType==='wall'?'🟠':'🔵';
+  toast(emoji+' '+def.em+' '+def.name+' placed on '+lastSurfaceType+'!');
+
+  // pop-in
+  var sv=0,tgt=userScale;
+  var iv=setInterval(function(){sv=Math.min(sv+.07,1);obj.scale.setScalar(tgt*(1-Math.pow(1-sv,3)));if(sv>=1)clearInterval(iv);},14);
 }
 
 function doMoveAction(){
   if(grabbedObj){
-    // Drop
-    setHighlight(grabbedObj,false);
-    grabbedObj=null;
+    setHighlight(grabbedObj,false);grabbedObj=null;
     showGrabbed(false);
     if(surfaceFound){showMoveHint(true);setStatus('POINT AT OBJECT · TAP TO GRAB');}
     toast('Dropped ✓');
     return;
   }
-  // Grab — find object closest to camera center aim
   if(!placed.length){toast('No objects placed yet');return;}
-  var camPos=new THREE.Vector3();
-  var camDir=new THREE.Vector3();
-  camera.getWorldPosition(camPos);
-  camera.getWorldDirection(camDir);
+  var camPos=new THREE.Vector3();var camDir=new THREE.Vector3();
+  camera.getWorldPosition(camPos);camera.getWorldDirection(camDir);
   var best=null,bestScore=Infinity;
   placed.forEach(function(obj){
     var toObj=new THREE.Vector3().subVectors(obj.position,camPos);
-    var dist=toObj.length();
-    if(dist<.05) return; // skip if too close
+    var dist=toObj.length();if(dist<.05)return;
     toObj.normalize();
-    var dot=toObj.dot(camDir);
-    if(dot<.3) return; // not in front
+    var dot=toObj.dot(camDir);if(dot<.3)return;
     var angle=Math.acos(Math.min(1,dot));
     var score=angle*3+dist*.05;
     if(score<bestScore){bestScore=score;best=obj;}
   });
   if(!best){toast('Point your camera directly at an object');return;}
-  grabbedObj=best;
-  setHighlight(grabbedObj,true);
-  showMoveHint(false);
-  showGrabbed(true);
+  grabbedObj=best;setHighlight(grabbedObj,true);
+  showMoveHint(false);showGrabbed(true);
   setStatus('MOVE PHONE TO REPOSITION · TAP TO DROP');
-  toast('Grabbed! Move your phone');
+  toast('Grabbed! Move your phone to any surface');
 }
 
 // ── MODE ─────────────────────────────────────────────────────
@@ -496,20 +630,19 @@ function setModeUI(m){
   document.getElementById('mp-move').classList.toggle('on',m==='move');
   if(grabbedObj){setHighlight(grabbedObj,false);grabbedObj=null;}
   showGrabbed(false);
+  hideAllReticles();
   if(m==='place'){
     showMoveHint(false);
-    if(surfaceFound){showTap(true);setStatus('SURFACE FOUND · TAP TO PLACE');}
-    else{showScan(true);showTap(false);setStatus('SLOWLY SWEEP YOUR CAMERA OVER A FLAT SURFACE');}
-    reticle.visible=surfaceFound;
+    if(surfaceFound){showTap(true);updateStatusForSurface(lastSurfaceType);}
+    else{showScan(true);showTap(false);setStatus('POINT AT FLOOR · WALL · OR CEILING');}
   } else {
     showTap(false);
-    reticle.visible=false;
     if(surfaceFound){showMoveHint(true);setStatus('POINT AT OBJECT · TAP TO GRAB');}
-    else{showScan(true);showMoveHint(false);setStatus('SLOWLY SWEEP YOUR CAMERA OVER A FLAT SURFACE');}
+    else{showScan(true);showMoveHint(false);setStatus('POINT AT FLOOR · WALL · OR CEILING');}
   }
 }
 
-// ── UI HELPERS ───────────────────────────────────────────────
+// ── UI HELPERS ─────────────────────────────────────────────
 function setBadge(t,w){var b=document.getElementById('badge');b.textContent=t;b.className='badge'+(w?' warn':'');}
 function setStatus(t){document.getElementById('status-text').textContent=t;}
 function showScan(v){document.getElementById('scan-ui').classList.toggle('show',v);}
@@ -517,26 +650,34 @@ function showTap(v){document.getElementById('tap-hint').classList.toggle('show',
 function showMoveHint(v){document.getElementById('move-hint').classList.toggle('show',v);}
 function showGrabbed(v){document.getElementById('grabbed-indicator').classList.toggle('show',v);}
 function updateCount(){document.getElementById('pcnt').textContent=placed.length;}
-var toastT;
-function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('on');},2500);}
 
-// ── TRAY ────────────────────────────────────────────────────
+function setSurfaceType(type){
+  var el=document.getElementById('surf-type');
+  if(!type){el.textContent='';el.className='';return;}
+  var labels={floor:'▭ FLOOR',wall:'▮ WALL',ceiling:'▭ CEILING'};
+  el.textContent=labels[type]||'';
+  el.className=type;
+}
+
+var toastT;
+function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('on');},2800);}
+
+// ── TRAY ───────────────────────────────────────────────────
 function buildTray(){
   var wrap=document.getElementById('cards');
   MODELS.forEach(function(m){
-    var card=document.createElement('div');
-    card.className='card'+(m.id===selId?' sel':'');
+    var card=document.createElement('div');card.className='card'+(m.id===selId?' sel':'');
     card.innerHTML='<div class="em">'+m.em+'</div><div class="nm">'+m.name+'</div>';
     card.addEventListener('click',function(){document.querySelectorAll('.card').forEach(function(c){c.classList.remove('sel');});card.classList.add('sel');selId=m.id;toast(m.em+' '+m.name+' selected');});
     wrap.appendChild(card);
   });
 }
 
-// ── BUTTONS ─────────────────────────────────────────────────
+// ── BUTTONS ───────────────────────────────────────────────
 function bindButtons(){
   document.getElementById('b-undo').addEventListener('click',function(){
-    if(!placed.length)return;
-    var obj=placed.pop();if(obj===grabbedObj){setHighlight(obj,false);grabbedObj=null;showGrabbed(false);}
+    if(!placed.length)return;var obj=placed.pop();
+    if(obj===grabbedObj){setHighlight(obj,false);grabbedObj=null;showGrabbed(false);}
     scene.remove(obj);updateCount();toast('↩ Removed');
   });
   document.getElementById('b-up').addEventListener('click',function(){
@@ -556,25 +697,22 @@ function bindButtons(){
   document.getElementById('mp-move').addEventListener('click',function(){if(xrSession)setModeUI('move');});
 }
 
-// ── AR CHECK ────────────────────────────────────────────────
+// ── AR CHECK ──────────────────────────────────────────────
 function checkAR(){
   if(!navigator.xr){markNA();return;}
   navigator.xr.isSessionSupported('immersive-ar').then(function(ok){if(!ok)markNA();}).catch(markNA);
 }
 function markNA(){
   var btn=document.getElementById('enter-ar');btn.innerHTML='⚠ AR NOT AVAILABLE';btn.classList.add('na');
-  btn.onclick=function(){toast('Use Chrome on Android with ARCore support');};
+  btn.onclick=function(){toast('Use Chrome on Android with ARCore');};
   setBadge('● NO WEBXR',true);
   setTimeout(function(){toast('Open in Chrome on an ARCore-compatible Android device');},2000);
 }
 
-// ── LOADER ──────────────────────────────────────────────────
-function runLoader(cb){
-  var fill=document.getElementById('lfill'),p=0;
-  var iv=setInterval(function(){p+=5+Math.random()*10;fill.style.width=Math.min(p,100)+'%';if(p>=100){clearInterval(iv);setTimeout(cb,150);}},50);
-}
+// ── LOADER ────────────────────────────────────────────────
+function runLoader(cb){var fill=document.getElementById('lfill'),p=0;var iv=setInterval(function(){p+=5+Math.random()*10;fill.style.width=Math.min(p,100)+'%';if(p>=100){clearInterval(iv);setTimeout(cb,150);}},50);}
 
-// ── BOOT ────────────────────────────────────────────────────
+// ── BOOT ──────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',function(){
   runLoader(function(){
     try{initScene();buildTray();bindButtons();checkAR();startPreview();}
