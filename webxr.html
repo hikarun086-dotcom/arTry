@@ -2,180 +2,350 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR Zone — Place Your World</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>AR Zone</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
 
-  :root {
-    --neon: #00FFB2;
-    --neon2: #FF2D6B;
-    --dark: #080B0F;
-    --glass: rgba(255,255,255,0.05);
-    --border: rgba(0,255,178,0.2);
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--dark); color: #fff; font-family: 'Syne', sans-serif; height: 100vh; overflow: hidden; user-select: none; }
+:root {
+  --neon: #00FFB2;
+  --neon2: #FF2D6B;
+  --dark: #070A0E;
+  --glass: rgba(7,10,14,0.82);
+}
 
-  #loader {
-    position: fixed; inset: 0; background: var(--dark);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    z-index: 9999; transition: opacity 0.6s ease;
-  }
-  #loader h1 {
-    font-size: clamp(2rem, 6vw, 4rem); font-weight: 800; letter-spacing: -2px;
-    background: linear-gradient(135deg, var(--neon), #fff, var(--neon2));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  }
-  #loader p { color: rgba(255,255,255,0.4); font-family: 'Space Mono', monospace; font-size: 0.75rem; margin-top: 0.5rem; letter-spacing: 3px; }
-  .loader-bar { width: 200px; height: 2px; background: rgba(255,255,255,0.1); margin-top: 2rem; border-radius: 99px; overflow: hidden; }
-  .loader-bar::after { content: ''; display: block; height: 100%; background: var(--neon); animation: load 1.8s ease forwards; }
-  @keyframes load { from { width: 0; } to { width: 100%; } }
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
-  #hud { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
+body {
+  background: var(--dark);
+  color:#fff;
+  font-family:'Syne',sans-serif;
+  height:100vh; width:100vw;
+  overflow:hidden;
+  user-select:none;
+}
 
-  #topbar {
-    pointer-events: all; position: absolute; top: 0; left: 0; right: 0;
-    padding: 1.2rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
-    background: linear-gradient(to bottom, rgba(8,11,15,0.9), transparent);
-  }
-  .logo { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
-  .logo span { color: var(--neon); }
-  .pill {
-    background: var(--glass); border: 1px solid var(--border); border-radius: 99px;
-    padding: 0.35rem 0.9rem; font-family: 'Space Mono', monospace;
-    font-size: 0.65rem; color: var(--neon); letter-spacing: 1px; backdrop-filter: blur(10px);
-  }
+/* ── LOADER ── */
+#loader {
+  position:fixed; inset:0;
+  background:var(--dark);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  z-index:9999; transition:opacity .5s;
+}
+#loader h1 {
+  font-size:clamp(2.2rem,8vw,4rem); font-weight:800; letter-spacing:-2px;
+  background:linear-gradient(135deg,var(--neon) 0%,#fff 50%,var(--neon2) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+#loader p { font-family:'Space Mono',monospace; font-size:.7rem; color:rgba(255,255,255,.4); margin-top:.5rem; letter-spacing:3px; }
+.lbar { width:180px; height:2px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden; margin-top:2rem; }
+.lbar-fill { height:100%; background:var(--neon); width:0; border-radius:99px; transition:width .05s linear; }
 
-  #status {
-    position: absolute; top: 4.5rem; left: 50%; transform: translateX(-50%);
-    font-family: 'Space Mono', monospace; font-size: 0.7rem;
-    color: rgba(255,255,255,0.5); letter-spacing: 2px; text-align: center; pointer-events: none;
-  }
+/* ── THREE CANVAS ── */
+#c { position:fixed; inset:0; z-index:1; touch-action:none; }
 
-  #placed-count {
-    pointer-events: none; position: absolute; top: 4.5rem; right: 1.5rem;
-    font-family: 'Space Mono', monospace; font-size: 0.65rem;
-    color: rgba(255,255,255,0.4); letter-spacing: 1px;
-  }
-  #placed-count span { color: var(--neon); font-weight: 700; }
+/* ── HUD wrapper (sits above canvas, passes through touches except children) ── */
+#hud { position:fixed; inset:0; z-index:10; pointer-events:none; }
 
-  #reticle-hint {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    pointer-events: none; text-align: center;
-    display: flex; flex-direction: column; align-items: center; gap: 1rem;
-    opacity: 0; transition: opacity 0.5s;
-  }
-  #reticle-hint.visible { opacity: 1; }
-  .scan-ring {
-    width: 80px; height: 80px; border: 2px solid var(--neon); border-radius: 50%;
-    position: relative; animation: pulse-ring 2s ease-in-out infinite;
-  }
-  .scan-ring::before, .scan-ring::after { content: ''; position: absolute; border-radius: 50%; border: 1px solid rgba(0,255,178,0.3); }
-  .scan-ring::before { inset: -12px; }
-  .scan-ring::after { inset: -24px; }
-  @keyframes pulse-ring { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(0.95); } }
-  #reticle-hint p { font-family: 'Space Mono', monospace; font-size: 0.65rem; color: rgba(255,255,255,0.6); letter-spacing: 2px; }
+/* ── TOPBAR ── */
+#topbar {
+  pointer-events:all;
+  position:absolute; top:0; left:0; right:0;
+  padding:env(safe-area-inset-top,0) 0 0;
+  background:linear-gradient(to bottom,rgba(7,10,14,.92) 70%,transparent);
+  display:flex; align-items:center; justify-content:space-between;
+  padding-left:1.2rem; padding-right:1.2rem; padding-top:calc(env(safe-area-inset-top,0px) + .9rem); padding-bottom:.9rem;
+}
+.logo { font-weight:800; font-size:1.15rem; letter-spacing:-1px; }
+.logo b { color:var(--neon); }
+.badge {
+  font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:1.5px;
+  border:1px solid rgba(0,255,178,.3); border-radius:99px;
+  padding:.28rem .8rem; color:var(--neon); backdrop-filter:blur(8px);
+  transition:color .3s,border-color .3s;
+}
+.badge.warn { color:var(--neon2); border-color:rgba(255,45,107,.4); }
 
-  #tray {
-    pointer-events: all; position: absolute; bottom: 0; left: 0; right: 0;
-    padding: 1rem 1.5rem 2rem;
-    background: linear-gradient(to top, rgba(8,11,15,0.95) 60%, transparent);
-  }
-  #tray-label { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: rgba(255,255,255,0.35); letter-spacing: 3px; margin-bottom: 0.8rem; }
-  #model-list { display: flex; gap: 0.75rem; overflow-x: auto; scrollbar-width: none; }
-  #model-list::-webkit-scrollbar { display: none; }
+/* ── STATUS BAR ── */
+#statusbar {
+  position:absolute; top:4rem; left:50%; transform:translateX(-50%);
+  pointer-events:none; text-align:center;
+}
+#status-text {
+  display:inline-block;
+  font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:2px;
+  color:rgba(255,255,255,.55); background:rgba(7,10,14,.5);
+  backdrop-filter:blur(6px); border-radius:99px;
+  padding:.35rem 1rem; border:1px solid rgba(255,255,255,.07);
+  transition:opacity .3s;
+}
 
-  .model-card {
-    flex-shrink: 0; width: 80px;
-    background: var(--glass); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
-    padding: 0.6rem; cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
-    display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
-    backdrop-filter: blur(16px);
-  }
-  .model-card:hover { transform: translateY(-4px); border-color: var(--border); }
-  .model-card.selected { border-color: var(--neon); background: rgba(0,255,178,0.08); transform: translateY(-6px); box-shadow: 0 0 24px rgba(0,255,178,0.2); }
-  .model-card .icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
-  .model-card .name { font-family: 'Space Mono', monospace; font-size: 0.55rem; color: rgba(255,255,255,0.6); text-align: center; }
-  .model-card.selected .name { color: var(--neon); }
+/* ── CENTER RETICLE UI (scanning animation in DOM, not 3D) ── */
+#scan-ui {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  pointer-events:none;
+  display:flex; flex-direction:column; align-items:center; gap:.8rem;
+  opacity:0; transition:opacity .4s;
+}
+#scan-ui.show { opacity:1; }
 
-  #actions {
-    pointer-events: all; position: absolute; right: 1.5rem; top: 50%; transform: translateY(-50%);
-    display: flex; flex-direction: column; gap: 0.75rem;
-  }
-  .action-btn {
-    width: 52px; height: 52px; border-radius: 14px;
-    border: 1px solid rgba(255,255,255,0.1); background: rgba(8,11,15,0.85);
-    backdrop-filter: blur(10px); color: #fff; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem; transition: all 0.2s;
-  }
-  .action-btn:hover { border-color: var(--neon); box-shadow: 0 0 16px rgba(0,255,178,0.2); transform: scale(1.05); }
-  .action-btn.danger:hover { border-color: var(--neon2); box-shadow: 0 0 16px rgba(255,45,107,0.2); }
+.reticle-rings {
+  position:relative; width:100px; height:100px;
+  display:flex; align-items:center; justify-content:center;
+}
+.ring {
+  position:absolute; border-radius:50%;
+  border:1.5px solid var(--neon);
+  animation:ring-pulse 2s ease-in-out infinite;
+}
+.ring-1 { width:40px; height:40px; animation-delay:0s; }
+.ring-2 { width:64px; height:64px; animation-delay:.3s; opacity:.6; }
+.ring-3 { width:90px; height:90px; animation-delay:.6s; opacity:.3; }
+.ring-cross {
+  width:14px; height:14px; position:relative;
+}
+.ring-cross::before,.ring-cross::after {
+  content:''; position:absolute; background:var(--neon); border-radius:2px;
+}
+.ring-cross::before { width:2px; height:14px; left:6px; top:0; }
+.ring-cross::after  { width:14px; height:2px; top:6px; left:0; }
 
-  #start-ar {
-    pointer-events: all; position: absolute; bottom: 10rem; left: 50%; transform: translateX(-50%);
-    background: var(--neon); color: #000; border: none;
-    padding: 1rem 2.5rem; border-radius: 99px;
-    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem;
-    cursor: pointer; box-shadow: 0 0 40px rgba(0,255,178,0.4);
-    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
-    white-space: nowrap; display: flex; align-items: center; gap: 0.6rem;
-  }
-  #start-ar:hover { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 60px rgba(0,255,178,0.6); }
-  #start-ar.hidden { display: none; }
-  #start-ar.no-ar { background: rgba(255,45,107,0.15); color: #FF2D6B; border: 1px solid #FF2D6B; box-shadow: 0 0 30px rgba(255,45,107,0.2); }
+@keyframes ring-pulse {
+  0%,100% { transform:scale(1); opacity:inherit; }
+  50% { transform:scale(.92); opacity:.4; }
+}
 
-  #toast {
-    position: fixed; bottom: 8rem; left: 50%; transform: translateX(-50%) translateY(20px);
-    background: rgba(0,255,178,0.12); border: 1px solid var(--neon); border-radius: 99px;
-    padding: 0.5rem 1.2rem; font-family: 'Space Mono', monospace; font-size: 0.7rem;
-    color: var(--neon); letter-spacing: 1px; opacity: 0; transition: all 0.3s;
-    pointer-events: none; z-index: 999; white-space: nowrap;
-  }
-  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.scan-label {
+  font-family:'Space Mono',monospace; font-size:.6rem;
+  color:rgba(255,255,255,.5); letter-spacing:2.5px; text-align:center;
+}
 
-  body::after {
-    content: ''; position: fixed; inset: 0;
-    background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(0,0,0,0.025) 2px, rgba(0,0,0,0.025) 4px);
-    pointer-events: none; z-index: 9998;
-  }
+/* "tap to place" prompt when surface found */
+#tap-hint {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  pointer-events:none; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:.5rem;
+  opacity:0; transition:opacity .4s;
+}
+#tap-hint.show { opacity:1; }
+.tap-circle {
+  width:56px; height:56px; border-radius:50%;
+  border:2px solid var(--neon);
+  box-shadow:0 0 0 0 rgba(0,255,178,.4);
+  animation:tap-ping 1.6s ease-out infinite;
+}
+@keyframes tap-ping {
+  0%   { box-shadow:0 0 0 0 rgba(0,255,178,.5); }
+  70%  { box-shadow:0 0 0 18px rgba(0,255,178,0); }
+  100% { box-shadow:0 0 0 0 rgba(0,255,178,0); }
+}
+.tap-circle-inner {
+  width:56px; height:56px; border-radius:50%;
+  position:absolute; top:0; left:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.4rem;
+}
+.tap-text {
+  font-family:'Space Mono',monospace; font-size:.6rem;
+  color:var(--neon); letter-spacing:2px;
+}
+
+/* ── RIGHT ACTION RAIL ── */
+#rail {
+  pointer-events:all;
+  position:absolute; right:1rem; top:50%; transform:translateY(-50%);
+  display:flex; flex-direction:column; gap:.6rem;
+}
+.rail-btn {
+  width:48px; height:48px; border-radius:13px;
+  border:1px solid rgba(255,255,255,.12);
+  background:var(--glass); backdrop-filter:blur(12px);
+  color:#fff; font-size:1.1rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .2s; -webkit-backdrop-filter:blur(12px);
+  touch-action:manipulation;
+}
+.rail-btn:active { transform:scale(.92); }
+.rail-btn:hover { border-color:var(--neon); box-shadow:0 0 14px rgba(0,255,178,.18); }
+.rail-btn.red:hover { border-color:var(--neon2); box-shadow:0 0 14px rgba(255,45,107,.2); }
+
+.rail-label {
+  font-family:'Space Mono',monospace; font-size:.45rem;
+  color:rgba(255,255,255,.3); text-align:center; letter-spacing:.5px; margin-top:-.3rem;
+}
+
+/* ── BOTTOM TRAY ── */
+#tray {
+  pointer-events:all;
+  position:absolute; bottom:0; left:0; right:0;
+  padding:0 1rem calc(env(safe-area-inset-bottom,0px) + 1rem);
+  background:linear-gradient(to top,rgba(7,10,14,.95) 55%,transparent);
+}
+.tray-row {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:.55rem;
+}
+.tray-label {
+  font-family:'Space Mono',monospace; font-size:.55rem;
+  color:rgba(255,255,255,.3); letter-spacing:3px;
+}
+#placed-badge {
+  font-family:'Space Mono',monospace; font-size:.55rem;
+  color:rgba(255,255,255,.3); letter-spacing:1px;
+}
+#placed-badge span { color:var(--neon); font-weight:700; }
+
+#cards {
+  display:flex; gap:.55rem; overflow-x:auto; padding-bottom:.2rem;
+  scrollbar-width:none;
+}
+#cards::-webkit-scrollbar { display:none; }
+
+.card {
+  flex-shrink:0; width:72px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px; padding:.5rem .4rem;
+  cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:.3rem;
+  transition:all .22s cubic-bezier(.34,1.56,.64,1);
+  touch-action:manipulation;
+}
+.card:active { transform:scale(.94); }
+.card.sel {
+  border-color:var(--neon);
+  background:rgba(0,255,178,.07);
+  transform:translateY(-5px);
+  box-shadow:0 0 20px rgba(0,255,178,.18);
+}
+.card .em { font-size:1.5rem; line-height:1; }
+.card .nm {
+  font-family:'Space Mono',monospace; font-size:.5rem;
+  color:rgba(255,255,255,.5); text-align:center;
+}
+.card.sel .nm { color:var(--neon); }
+
+/* ── ENTER AR BUTTON ── */
+#enter-ar {
+  pointer-events:all;
+  position:absolute; bottom:9.5rem; left:50%; transform:translateX(-50%);
+  background:var(--neon); color:#000;
+  border:none; border-radius:99px;
+  padding:.9rem 2.2rem;
+  font-family:'Syne',sans-serif; font-weight:800; font-size:.95rem;
+  cursor:pointer; white-space:nowrap;
+  box-shadow:0 0 36px rgba(0,255,178,.45);
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);
+  display:flex; align-items:center; gap:.5rem;
+  touch-action:manipulation;
+}
+#enter-ar:hover { transform:translateX(-50%) scale(1.04); }
+#enter-ar:active { transform:translateX(-50%) scale(.96); }
+#enter-ar.gone { display:none; }
+#enter-ar.unavail {
+  background:rgba(255,45,107,.12); color:var(--neon2);
+  border:1px solid rgba(255,45,107,.4);
+  box-shadow:0 0 30px rgba(255,45,107,.15);
+}
+
+/* ── TOAST ── */
+#toast {
+  position:fixed; bottom:9rem; left:50%; transform:translateX(-50%) translateY(8px);
+  font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:1px;
+  color:var(--neon); background:rgba(0,255,178,.1);
+  border:1px solid rgba(0,255,178,.35); border-radius:99px;
+  padding:.45rem 1.1rem; white-space:nowrap;
+  pointer-events:none; z-index:999;
+  opacity:0; transition:all .25s;
+}
+#toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ── SCANLINE OVERLAY ── */
+body::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9997;
+  background:repeating-linear-gradient(to bottom,transparent 0,transparent 3px,rgba(0,0,0,.02) 3px,rgba(0,0,0,.02) 4px);
+}
 </style>
 </head>
 <body>
 
+<!-- Loader -->
 <div id="loader">
   <h1>AR ZONE</h1>
-  <p>LOADING SPATIAL ENGINE</p>
-  <div class="loader-bar"></div>
+  <p>SPATIAL ENGINE</p>
+  <div class="lbar"><div class="lbar-fill" id="lbar-fill"></div></div>
 </div>
 
+<!-- Three.js canvas injected here by JS -->
+
+<!-- HUD -->
 <div id="hud">
   <div id="topbar">
-    <div class="logo">AR <span>ZONE</span></div>
-    <div class="pill" id="ar-pill">● READY</div>
+    <div class="logo">AR <b>ZONE</b></div>
+    <div class="badge" id="badge">● READY</div>
   </div>
-  <div id="status">SELECT A MODEL &amp; ENTER AR</div>
-  <div id="placed-count">PLACED: <span id="count">0</span></div>
-  <div id="reticle-hint">
-    <div class="scan-ring"></div>
-    <p>SURFACE DETECTED — TAP TO PLACE</p>
+
+  <div id="statusbar">
+    <span id="status-text">SELECT A MODEL AND TAP ENTER AR</span>
   </div>
-  <div id="actions">
-    <button class="action-btn" id="btn-undo">↩</button>
-    <button class="action-btn" id="btn-scale-up">⊕</button>
-    <button class="action-btn" id="btn-scale-dn">⊖</button>
-    <button class="action-btn danger" id="btn-clear">✕</button>
+
+  <!-- Scanning animation (shown while looking for surface) -->
+  <div id="scan-ui">
+    <div class="reticle-rings">
+      <div class="ring ring-3"></div>
+      <div class="ring ring-2"></div>
+      <div class="ring ring-1"></div>
+      <div class="ring-cross"></div>
+    </div>
+    <div class="scan-label">SCANNING SURFACE...</div>
   </div>
+
+  <!-- Tap hint (shown when surface found) -->
+  <div id="tap-hint">
+    <div style="position:relative;width:56px;height:56px;">
+      <div class="tap-circle"></div>
+      <div class="tap-circle-inner">👆</div>
+    </div>
+    <div class="tap-text">TAP TO PLACE</div>
+  </div>
+
+  <!-- Right rail -->
+  <div id="rail">
+    <div>
+      <button class="rail-btn" id="btn-undo">↩</button>
+      <div class="rail-label">UNDO</div>
+    </div>
+    <div>
+      <button class="rail-btn" id="btn-up">⊕</button>
+      <div class="rail-label">BIGGER</div>
+    </div>
+    <div>
+      <button class="rail-btn" id="btn-dn">⊖</button>
+      <div class="rail-label">SMALLER</div>
+    </div>
+    <div>
+      <button class="rail-btn red" id="btn-clr">✕</button>
+      <div class="rail-label">CLEAR</div>
+    </div>
+  </div>
+
+  <!-- Bottom tray -->
   <div id="tray">
-    <div id="tray-label">SELECT MODEL</div>
-    <div id="model-list"></div>
+    <div class="tray-row">
+      <div class="tray-label">CHOOSE MODEL</div>
+      <div id="placed-badge">PLACED <span id="pcount">0</span></div>
+    </div>
+    <div id="cards"></div>
   </div>
-  <button id="start-ar">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-      <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+
+  <!-- Enter AR -->
+  <button id="enter-ar">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+      <path d="M2 17l10 5 10-5"/>
+      <path d="M2 12l10 5 10-5"/>
     </svg>
     ENTER AR
   </button>
@@ -184,343 +354,439 @@
 <div id="toast"></div>
 
 <script>
-// Wait for THREE to be available
-(function() {
+(function () {
+'use strict';
 
+// ── MODELS ──────────────────────────────────────────────────────────
 var MODELS = [
-  { id:'cube',    name:'Cube',    emoji:'📦', build:buildCube },
-  { id:'sphere',  name:'Sphere',  emoji:'🔮', build:buildSphere },
-  { id:'torus',   name:'Torus',   emoji:'🍩', build:buildTorus },
-  { id:'rocket',  name:'Rocket',  emoji:'🚀', build:buildRocket },
-  { id:'crystal', name:'Crystal', emoji:'💎', build:buildCrystal },
-  { id:'pyramid', name:'Pyramid', emoji:'🔺', build:buildPyramid },
-  { id:'tree',    name:'Tree',    emoji:'🌲', build:buildTree },
-  { id:'ring',    name:'Ring',    emoji:'💍', build:buildRing },
+  {id:'cube',    name:'Cube',    em:'📦', fn:mkCube},
+  {id:'sphere',  name:'Sphere',  em:'🔮', fn:mkSphere},
+  {id:'torus',   name:'Torus',   em:'🍩', fn:mkTorus},
+  {id:'rocket',  name:'Rocket',  em:'🚀', fn:mkRocket},
+  {id:'crystal', name:'Crystal', em:'💎', fn:mkCrystal},
+  {id:'pyramid', name:'Pyramid', em:'🔺', fn:mkPyramid},
+  {id:'tree',    name:'Tree',    em:'🌲', fn:mkTree},
+  {id:'ring',    name:'Ring',    em:'💍', fn:mkRing},
 ];
 
-function mat(opts) { return new THREE.MeshStandardMaterial(opts); }
-function buildCube() {
-  var g = new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.BoxGeometry(0.2,0.2,0.2), mat({color:0x4488ff,metalness:0.4,roughness:0.3})));
+function ms(c,m,r){ return new THREE.MeshStandardMaterial({color:c,metalness:m||0,roughness:r||.5}); }
+
+function mkCube(){
+  var g=new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(.18,.18,.18),ms(0x5599ff,.4,.3)));
   return g;
 }
-function buildSphere() {
-  var g = new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.12,32,32), mat({color:0xff44aa,metalness:0.6,roughness:0.2})));
+function mkSphere(){
+  var g=new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(.11,32,32),ms(0xff44cc,.7,.15)));
   return g;
 }
-function buildTorus() {
-  var g = new THREE.Group();
-  var m = new THREE.Mesh(new THREE.TorusGeometry(0.12,0.045,16,40), mat({color:0x44ffaa,metalness:0.5,roughness:0.25}));
-  m.rotation.x = Math.PI/2; g.add(m); return g;
+function mkTorus(){
+  var g=new THREE.Group();
+  var m=new THREE.Mesh(new THREE.TorusGeometry(.11,.038,16,40),ms(0x44ffaa,.5,.2));
+  m.rotation.x=Math.PI/2; g.add(m); return g;
 }
-function buildRocket() {
-  var g = new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.18,12), mat({color:0xff8844,metalness:0.5,roughness:0.2})));
-  var nose = new THREE.Mesh(new THREE.ConeGeometry(0.04,0.1,12), mat({color:0xffffff,metalness:0.3,roughness:0.4}));
-  nose.position.y = 0.14; g.add(nose);
-  var f1 = new THREE.Mesh(new THREE.BoxGeometry(0.01,0.06,0.06), mat({color:0xff4444}));
-  f1.position.set(0.05,-0.08,0); g.add(f1);
-  var f2 = f1.clone(); f2.position.set(-0.05,-0.08,0); g.add(f2);
+function mkRocket(){
+  var g=new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.16,12),ms(0xff8833,.5,.25)));
+  var nose=new THREE.Mesh(new THREE.ConeGeometry(.035,.09,12),ms(0xffffff,.2,.5));
+  nose.position.y=.125; g.add(nose);
+  [[.045,-0.07],[-.045,-0.07]].forEach(function(p){
+    var f=new THREE.Mesh(new THREE.BoxGeometry(.008,.055,.05),ms(0xff3333));
+    f.position.set(p[0],p[1],0); g.add(f);
+  });
   return g;
 }
-function buildCrystal() {
-  var g = new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.OctahedronGeometry(0.13,0), mat({color:0x88aaff,metalness:0.9,roughness:0.05,transparent:true,opacity:0.85})));
+function mkCrystal(){
+  var g=new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.OctahedronGeometry(.12,0),
+    new THREE.MeshStandardMaterial({color:0x99bbff,metalness:.95,roughness:.02,transparent:true,opacity:.82})));
   return g;
 }
-function buildPyramid() {
-  var g = new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.ConeGeometry(0.14,0.22,4), mat({color:0xffdd44,metalness:0.3,roughness:0.4})));
+function mkPyramid(){
+  var g=new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.ConeGeometry(.13,.2,4),ms(0xffdd44,.25,.45)));
   return g;
 }
-function buildTree() {
-  var g = new THREE.Group();
-  var trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.025,0.1,8), mat({color:0x8B4513}));
-  trunk.position.y = -0.06; g.add(trunk);
-  var c1 = new THREE.Mesh(new THREE.ConeGeometry(0.1,0.14,8), mat({color:0x2d8a4e})); c1.position.y=0.04; g.add(c1);
-  var c2 = new THREE.Mesh(new THREE.ConeGeometry(0.08,0.12,8), mat({color:0x44bb66})); c2.position.y=0.13; g.add(c2);
+function mkTree(){
+  var g=new THREE.Group();
+  var trunk=new THREE.Mesh(new THREE.CylinderGeometry(.018,.022,.09,8),ms(0x8B5E3C));
+  trunk.position.y=-.055; g.add(trunk);
+  [[.09,.13,.04,0x256b3a],[.07,.11,.12,0x2f9650],[.055,.095,.2,0x44bb66]].forEach(function(l){
+    var c=new THREE.Mesh(new THREE.ConeGeometry(l[0],l[1],8),ms(l[3]));
+    c.position.y=l[2]; g.add(c);
+  });
   return g;
 }
-function buildRing() {
-  var g = new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.TorusGeometry(0.1,0.02,12,40), mat({color:0xffcc44,metalness:0.9,roughness:0.05})));
-  var gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.03), mat({color:0x44aaff,metalness:0.8,roughness:0}));
-  gem.position.y=0.1; g.add(gem); return g;
+function mkRing(){
+  var g=new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.TorusGeometry(.09,.018,12,40),ms(0xffcc44,.92,.04)));
+  var gem=new THREE.Mesh(new THREE.OctahedronGeometry(.026),ms(0x55aaff,.85,.02));
+  gem.position.y=.09; g.add(gem); return g;
 }
 
-// ── STATE ──
-var selectedId = MODELS[0].id;
-var placedObjects = [];
-var hitTestSource = null;
-var hitTestRequested = false;
-var reticle, renderer, scene, camera;
+// ── SCENE SETUP ──────────────────────────────────────────────────────
+var scene, camera, renderer, reticle;
+var selId = MODELS[0].id;
+var placed = [];
+var scale  = 1.0;
+var surfaceFound = false;
+
+// XR state
 var xrSession = null;
 var xrRefSpace = null;
-var currentScale = 1.0;
-var previewObjs = [];
-var previewActive = false;
-var previewRAF = null;
+var hitTestSrc = null;
+var hitTestReady = false;
 
-// ── INIT ──
-function init() {
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.01, 20);
+// Preview state
+var prevObjs = [];
+var prevActive = false;
+var prevRAF = null;
 
-  renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
-  renderer.setPixelRatio(devicePixelRatio);
-  renderer.setSize(innerWidth, innerHeight);
+function initScene(){
+  scene  = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.005, 50);
+  camera.position.set(0,.5,0);
+
+  renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(innerWidth,innerHeight);
   renderer.xr.enabled = true;
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-  var canvas = renderer.domElement;
-  canvas.style.cssText = 'position:fixed;inset:0;z-index:1;width:100%;height:100%;';
-  document.body.appendChild(canvas);
+  var c = renderer.domElement;
+  c.id = 'c';
+  document.body.insertBefore(c, document.getElementById('hud'));
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-  var sun = new THREE.DirectionalLight(0xffffff, 1.2);
-  sun.position.set(2,4,3); sun.castShadow = true; scene.add(sun);
-  var fill = new THREE.PointLight(0x00ffb2, 0.8, 4);
-  fill.position.set(-1,1,-1); scene.add(fill);
+  // Lights
+  scene.add(new THREE.AmbientLight(0xffffff, .65));
+  var sun = new THREE.DirectionalLight(0xffffff, 1.1);
+  sun.position.set(1.5,3,2); sun.castShadow=true; scene.add(sun);
+  var fill = new THREE.PointLight(0x00ffb2,.7,5); fill.position.set(-1,1.5,-2); scene.add(fill);
 
-  var rGeo = new THREE.RingGeometry(0.06, 0.08, 32).rotateX(-Math.PI/2);
-  reticle = new THREE.Mesh(rGeo, new THREE.MeshBasicMaterial({color:0x00FFB2}));
-  reticle.matrixAutoUpdate = false;
-  reticle.visible = false;
-  scene.add(reticle);
+  // Reticle — a flat ring + dot on the floor, like model-viewer
+  var rGroup = new THREE.Group();
 
-  window.addEventListener('resize', function() {
+  // Outer ring
+  var outerRing = new THREE.Mesh(
+    new THREE.RingGeometry(0.09,0.105,48).rotateX(-Math.PI/2),
+    new THREE.MeshBasicMaterial({color:0x00FFB2,side:THREE.DoubleSide})
+  );
+  rGroup.add(outerRing);
+
+  // Inner dot
+  var dot = new THREE.Mesh(
+    new THREE.CircleGeometry(0.012,24).rotateX(-Math.PI/2),
+    new THREE.MeshBasicMaterial({color:0x00FFB2,side:THREE.DoubleSide})
+  );
+  rGroup.add(dot);
+
+  // Shadow disc underneath
+  var shadow = new THREE.Mesh(
+    new THREE.CircleGeometry(0.11,32).rotateX(-Math.PI/2),
+    new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.25,side:THREE.DoubleSide})
+  );
+  shadow.position.y = -.001;
+  rGroup.add(shadow);
+
+  rGroup.matrixAutoUpdate = false;
+  rGroup.visible = false;
+  scene.add(rGroup);
+  reticle = rGroup;
+
+  window.addEventListener('resize', function(){
     camera.aspect = innerWidth/innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
+    renderer.setSize(innerWidth,innerHeight);
   });
 }
 
-// ── AR ──
-function startAR() {
-  navigator.xr.isSessionSupported('immersive-ar').then(function(ok) {
-    if (!ok) { toast('⚠ WebXR AR not supported here'); return; }
-    navigator.xr.requestSession('immersive-ar', {
-      requiredFeatures: ['hit-test'],
-      optionalFeatures: ['dom-overlay','light-estimation'],
-      domOverlay: { root: document.getElementById('hud') }
-    }).then(function(session) {
-      xrSession = session;
-      renderer.xr.setReferenceSpaceType('local');
-      renderer.xr.setSession(session).then(function() {
-        session.requestReferenceSpace('local').then(function(rs) {
-          xrRefSpace = rs;
-        });
-      });
+// ── PREVIEW LOOP (before AR) ─────────────────────────────────────────
+function startPreview(){
+  prevActive = true;
+  prevObjs.forEach(function(o){scene.remove(o);});
+  prevObjs = [];
 
-      session.addEventListener('end', function() {
-        hitTestRequested = false; hitTestSource = null; xrSession = null;
-        document.getElementById('start-ar').classList.remove('hidden');
-        document.getElementById('ar-pill').textContent = '● READY';
-        setStatus('SELECT A MODEL &amp; ENTER AR');
-        setHint(false);
-        startPreview();
-      });
-      session.addEventListener('select', onSelect);
+  MODELS.forEach(function(m,i){
+    var obj = m.fn();
+    var a = (i/MODELS.length)*Math.PI*2;
+    obj.position.set(Math.cos(a)*1.3, 0, Math.sin(a)*1.3-4.5);
+    obj.userData.previewAngle = a;
+    obj.scale.setScalar(.85);
+    scene.add(obj); prevObjs.push(obj);
+  });
+  camera.position.set(0,.4,0);
+  camera.lookAt(0,0,-4.5);
 
-      // Stop preview
-      previewActive = false;
-      if (previewRAF) cancelAnimationFrame(previewRAF);
-      previewObjs.forEach(function(o){ scene.remove(o); });
-      previewObjs = [];
-
-      document.getElementById('start-ar').classList.add('hidden');
-      document.getElementById('ar-pill').textContent = '● AR ACTIVE';
-      setStatus('SCANNING FOR SURFACES...');
-      renderer.setAnimationLoop(arLoop);
-    }).catch(function(e){ toast('AR error: ' + e.message); });
-  }).catch(function(){ toast('⚠ WebXR not available'); });
+  var t=0;
+  function loop(){
+    if(!prevActive) return;
+    prevRAF = requestAnimationFrame(loop);
+    t+=.005;
+    prevObjs.forEach(function(o,i){
+      o.rotation.y+=.011;
+      o.position.y = Math.sin(t*1.1+i)*.1;
+    });
+    renderer.render(scene,camera);
+  }
+  loop();
 }
 
-function arLoop(ts, frame) {
-  if (!frame) { renderer.render(scene, camera); return; }
+function stopPreview(){
+  prevActive=false;
+  if(prevRAF){cancelAnimationFrame(prevRAF); prevRAF=null;}
+  prevObjs.forEach(function(o){scene.remove(o);}); prevObjs=[];
+}
 
-  if (!hitTestRequested) {
-    xrSession.requestReferenceSpace('viewer').then(function(vs) {
-      xrSession.requestHitTestSource({ space:vs }).then(function(src) {
-        hitTestSource = src;
-      });
+// ── AR SESSION ───────────────────────────────────────────────────────
+function enterAR(){
+  if(!navigator.xr){ toast('WebXR not supported in this browser'); return; }
+
+  navigator.xr.requestSession('immersive-ar',{
+    requiredFeatures: ['hit-test'],
+    optionalFeatures: ['dom-overlay','anchors'],
+    domOverlay: { root: document.getElementById('hud') }
+  })
+  .then(function(session){
+    xrSession = session;
+    renderer.xr.setReferenceSpaceType('local');
+
+    return renderer.xr.setSession(session).then(function(){
+      return session.requestReferenceSpace('local');
+    }).then(function(rs){
+      xrRefSpace = rs;
+
+      // Request viewer space for hit-test
+      return session.requestReferenceSpace('viewer');
+    }).then(function(viewerSpace){
+      return session.requestHitTestSource({space: viewerSpace});
+    }).then(function(src){
+      hitTestSrc = src;
+      hitTestReady = true;
     });
-    hitTestRequested = true;
-  }
+  })
+  .then(function(){
+    stopPreview();
+    xrSession.addEventListener('end', onSessionEnd);
+    xrSession.addEventListener('select', onSelect);
 
-  if (hitTestSource) {
-    var hits = frame.getHitTestResults(hitTestSource);
-    if (hits.length) {
+    setBadge('● ACTIVE','');
+    setStatus('SLOWLY MOVE YOUR PHONE OVER A FLAT SURFACE');
+    setScanUI(true);
+    setTapHint(false);
+    document.getElementById('enter-ar').classList.add('gone');
+    surfaceFound = false;
+
+    renderer.setAnimationLoop(arLoop);
+  })
+  .catch(function(e){
+    console.error('AR error',e);
+    toast('AR Error: '+e.message);
+  });
+}
+
+function onSessionEnd(){
+  hitTestSrc = null; hitTestReady = false;
+  xrSession = null; xrRefSpace = null;
+  renderer.setAnimationLoop(null);
+  setBadge('● READY','');
+  setStatus('SELECT A MODEL AND TAP ENTER AR');
+  setScanUI(false); setTapHint(false);
+  document.getElementById('enter-ar').classList.remove('gone');
+  reticle.visible = false;
+  surfaceFound = false;
+  startPreview();
+}
+
+// ── AR RENDER LOOP ────────────────────────────────────────────────────
+function arLoop(timestamp, frame){
+  if(!frame){ renderer.render(scene,camera); return; }
+
+  // Hit test
+  if(hitTestReady && hitTestSrc){
+    var hits = frame.getHitTestResults(hitTestSrc);
+    if(hits.length > 0){
       var pose = hits[0].getPose(xrRefSpace);
-      reticle.visible = true;
-      reticle.matrix.fromArray(pose.transform.matrix);
-      setStatus('SURFACE FOUND — TAP TO PLACE');
-      setHint(true);
+      if(pose){
+        reticle.visible = true;
+        reticle.matrix.fromArray(pose.transform.matrix);
+
+        if(!surfaceFound){
+          surfaceFound = true;
+          setScanUI(false);
+          setTapHint(true);
+          setStatus('SURFACE FOUND — TAP ANYWHERE TO PLACE');
+        }
+      }
     } else {
       reticle.visible = false;
-      setStatus('SCANNING FOR SURFACES...');
-      setHint(false);
+      if(surfaceFound){
+        surfaceFound = false;
+        setScanUI(true);
+        setTapHint(false);
+        setStatus('SLOWLY MOVE YOUR PHONE OVER A FLAT SURFACE');
+      }
     }
   }
 
-  var t = performance.now()*0.001;
-  placedObjects.forEach(function(o,i) {
-    o.rotation.y += 0.005;
-    o.position.y = o.userData.baseY + Math.sin(t*1.5+i)*0.01;
+  // Animate placed objects
+  var t = timestamp * 0.001;
+  placed.forEach(function(obj,i){
+    obj.rotation.y += .006;
+    if(obj.userData.baseY !== undefined){
+      obj.position.y = obj.userData.baseY + Math.sin(t*1.4+i*.7)*.012;
+    }
   });
 
   renderer.render(scene, camera);
 }
 
-function onSelect() {
-  if (!reticle.visible) return;
-  var def = MODELS.find(function(m){ return m.id===selectedId; });
-  var obj = def.build();
+// ── PLACE OBJECT ─────────────────────────────────────────────────────
+function onSelect(){
+  if(!reticle.visible) return;
+
+  var def = MODELS.find(function(m){return m.id===selId;});
+  var obj = def.fn();
+
+  // Decompose reticle matrix to get position/rotation
   var pos = new THREE.Vector3();
   var quat = new THREE.Quaternion();
   var scl = new THREE.Vector3();
   reticle.matrix.decompose(pos, quat, scl);
+
   obj.position.copy(pos);
-  obj.quaternion.copy(quat);
-  obj.position.y += 0.1;
+  obj.position.y += 0.01; // sit on surface
   obj.userData.baseY = obj.position.y;
   obj.scale.setScalar(0);
+
   scene.add(obj);
-  placedObjects.push(obj);
-
-  var s=0, target=currentScale;
-  var iv = setInterval(function(){
-    s = Math.min(s+0.08, 1);
-    obj.scale.setScalar(target*s);
-    if (s>=1) clearInterval(iv);
-  }, 16);
-
+  placed.push(obj);
   updateCount();
-  toast(def.emoji + ' ' + def.name.toUpperCase() + ' PLACED');
+
+  // Pop-in animation
+  var s = 0, tgt = scale;
+  var iv = setInterval(function(){
+    s = Math.min(s + .07, 1);
+    var ease = 1 - Math.pow(1-s, 3); // ease-out cubic
+    obj.scale.setScalar(tgt * ease);
+    if(s>=1) clearInterval(iv);
+  }, 14);
+
+  toast(def.em+' '+def.name+' placed!');
 }
 
-// ── PREVIEW ──
-function startPreview() {
-  previewActive = true;
-  previewObjs = [];
-  MODELS.forEach(function(m,i) {
-    var obj = m.build();
-    var a = (i/MODELS.length)*Math.PI*2;
-    obj.position.set(Math.cos(a)*1.4, 0, Math.sin(a)*1.4 - 4);
-    obj.userData.angle = a; obj.scale.setScalar(0.85);
-    scene.add(obj); previewObjs.push(obj);
-  });
-  camera.position.set(0, 0.5, 0);
-  camera.lookAt(0,0,-4);
-
-  var t=0;
-  function loop() {
-    if (!previewActive) return;
-    previewRAF = requestAnimationFrame(loop);
-    t += 0.005;
-    previewObjs.forEach(function(o,i){
-      o.rotation.y += 0.012;
-      o.position.y = Math.sin(t*1.2+i)*0.12;
-    });
-    renderer.render(scene, camera);
-  }
-  loop();
+// ── UI HELPERS ────────────────────────────────────────────────────────
+function setBadge(text, cls){
+  var b = document.getElementById('badge');
+  b.textContent = text;
+  b.className = 'badge' + (cls ? ' '+cls : '');
 }
+function setStatus(t){ document.getElementById('status-text').textContent = t; }
+function setScanUI(v){ document.getElementById('scan-ui').classList.toggle('show',v); }
+function setTapHint(v){ document.getElementById('tap-hint').classList.toggle('show',v); }
+function updateCount(){ document.getElementById('pcount').textContent = placed.length; }
 
-// ── HELPERS ──
-function setStatus(msg) { document.getElementById('status').innerHTML = msg; }
-function setHint(v) { document.getElementById('reticle-hint').classList.toggle('visible', v); }
-function updateCount() { document.getElementById('count').textContent = placedObjects.length; }
-var toastTimer;
-function toast(msg) {
+var toastT;
+function toast(msg){
   var el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2500);
+  el.textContent = msg; el.classList.add('on');
+  clearTimeout(toastT);
+  toastT = setTimeout(function(){el.classList.remove('on');}, 2600);
 }
 
-// ── TRAY ──
-function buildTray() {
-  var list = document.getElementById('model-list');
-  MODELS.forEach(function(m) {
+// ── BUILD TRAY ────────────────────────────────────────────────────────
+function buildTray(){
+  var wrap = document.getElementById('cards');
+  MODELS.forEach(function(m){
     var card = document.createElement('div');
-    card.className = 'model-card' + (m.id===selectedId ? ' selected' : '');
-    card.innerHTML = '<div class="icon">'+m.emoji+'</div><div class="name">'+m.name+'</div>';
-    card.onclick = function() {
-      document.querySelectorAll('.model-card').forEach(function(c){ c.classList.remove('selected'); });
-      card.classList.add('selected');
-      selectedId = m.id;
-      toast(m.emoji+' '+m.name.toUpperCase()+' SELECTED');
-    };
-    list.appendChild(card);
+    card.className = 'card'+(m.id===selId?' sel':'');
+    card.innerHTML = '<div class="em">'+m.em+'</div><div class="nm">'+m.name+'</div>';
+    card.addEventListener('click',function(){
+      document.querySelectorAll('.card').forEach(function(c){c.classList.remove('sel');});
+      card.classList.add('sel');
+      selId = m.id;
+      toast(m.em+' '+m.name+' selected');
+    });
+    wrap.appendChild(card);
   });
 }
 
-// ── BUTTONS ──
-function bindButtons() {
-  document.getElementById('btn-undo').onclick = function() {
-    if (!placedObjects.length) return;
-    scene.remove(placedObjects.pop()); updateCount(); toast('↩ REMOVED');
-  };
-  document.getElementById('btn-scale-up').onclick = function() {
-    currentScale = Math.min(currentScale+0.25, 3);
-    toast('SCALE: '+currentScale.toFixed(1)+'×');
-  };
-  document.getElementById('btn-scale-dn').onclick = function() {
-    currentScale = Math.max(currentScale-0.25, 0.25);
-    toast('SCALE: '+currentScale.toFixed(1)+'×');
-  };
-  document.getElementById('btn-clear').onclick = function() {
-    placedObjects.forEach(function(o){ scene.remove(o); });
-    placedObjects = []; updateCount(); toast('✕ ALL CLEARED');
-  };
-  document.getElementById('start-ar').onclick = function() {
-    if (navigator.xr) { startAR(); }
-    else { toast('⚠ WebXR not supported in this browser'); }
-  };
+// ── BIND BUTTONS ─────────────────────────────────────────────────────
+function bindButtons(){
+  document.getElementById('btn-undo').addEventListener('click',function(){
+    if(!placed.length) return;
+    scene.remove(placed.pop()); updateCount(); toast('↩ Last object removed');
+  });
+  document.getElementById('btn-up').addEventListener('click',function(){
+    scale = Math.min(scale+.25, 4);
+    toast('Scale: '+scale.toFixed(2)+'×');
+  });
+  document.getElementById('btn-dn').addEventListener('click',function(){
+    scale = Math.max(scale-.25, .25);
+    toast('Scale: '+scale.toFixed(2)+'×');
+  });
+  document.getElementById('btn-clr').addEventListener('click',function(){
+    placed.forEach(function(o){scene.remove(o);}); placed=[]; updateCount(); toast('All cleared');
+  });
+  document.getElementById('enter-ar').addEventListener('click', enterAR);
 }
 
-// ── BOOT ──
-window.addEventListener('DOMContentLoaded', function() {
-  try {
-    init();
-    buildTray();
-    bindButtons();
+// ── LOADER PROGRESS ──────────────────────────────────────────────────
+function animLoader(cb){
+  var fill = document.getElementById('lbar-fill');
+  var pct = 0;
+  var iv = setInterval(function(){
+    pct += 4 + Math.random()*8;
+    fill.style.width = Math.min(pct,100)+'%';
+    if(pct >= 100){ clearInterval(iv); setTimeout(cb, 200); }
+  }, 60);
+}
 
-    // Check AR availability and update button
-    if (navigator.xr) {
-      navigator.xr.isSessionSupported('immersive-ar').then(function(ok) {
-        if (!ok) {
-          var btn = document.getElementById('start-ar');
-          btn.innerHTML = '⚠ AR NOT AVAILABLE';
-          btn.classList.add('no-ar');
-          document.getElementById('ar-pill').textContent = '● NO WEBXR';
-          document.getElementById('ar-pill').style.color = '#FF2D6B';
-        }
-      });
-    } else {
-      var btn = document.getElementById('start-ar');
-      btn.innerHTML = '⚠ AR NOT AVAILABLE';
-      btn.classList.add('no-ar');
-      document.getElementById('ar-pill').textContent = '● NO WEBXR';
-      document.getElementById('ar-pill').style.color = '#FF2D6B';
+// ── AR SUPPORT CHECK ─────────────────────────────────────────────────
+function checkAR(){
+  if(!navigator.xr){
+    setUnavailable(); return;
+  }
+  navigator.xr.isSessionSupported('immersive-ar').then(function(ok){
+    if(!ok) setUnavailable();
+  }).catch(function(){ setUnavailable(); });
+}
+
+function setUnavailable(){
+  var btn = document.getElementById('enter-ar');
+  btn.innerHTML = '⚠ AR NOT AVAILABLE';
+  btn.classList.add('unavail');
+  btn.onclick = function(){
+    toast('Use Chrome on Android with ARCore support');
+  };
+  setBadge('● NO WEBXR','warn');
+  setTimeout(function(){
+    toast('Open this page in Chrome on an ARCore-compatible Android phone');
+  }, 2200);
+}
+
+// ── BOOT ─────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', function(){
+  animLoader(function(){
+    try {
+      initScene();
+      buildTray();
+      bindButtons();
+      checkAR();
+      startPreview();
+    } catch(e){
+      console.error(e);
+      document.getElementById('loader').innerHTML =
+        '<h1 style="color:'+('var(--neon2)')+'">ERROR</h1>' +
+        '<p style="color:rgba(255,255,255,.4);font-family:monospace;font-size:.75rem;margin-top:1rem;max-width:300px;text-align:center">'+e.message+'</p>';
+      return;
     }
 
-    startPreview();
-
-    setTimeout(function() {
-      var ld = document.getElementById('loader');
-      ld.style.opacity = '0';
-      setTimeout(function(){ ld.remove(); }, 600);
-    }, 1800);
-
-  } catch(e) {
-    document.getElementById('loader').innerHTML =
-      '<h1 style="color:#FF2D6B;font-size:2rem">ERROR</h1>' +
-      '<p style="color:rgba(255,255,255,0.5);margin-top:1rem;font-family:monospace;font-size:0.8rem">' + e.message + '</p>';
-    console.error(e);
-  }
+    var ld = document.getElementById('loader');
+    ld.style.opacity='0';
+    setTimeout(function(){ld.remove();},500);
+  });
 });
 
 })();
