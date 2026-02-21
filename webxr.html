@@ -5,266 +5,376 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>MIRA AR Zone</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
+/* ── RESET & BASE ──────────────────────────────────────────── */
 :root{
-  --neon:#00C896;--orange:#FF8C00;--blue:#4488FF;--red:#FF2D6B;--dark:#0A0D10;
-  --card-bg:rgba(255,255,255,.05);--glass:rgba(10,13,16,.82);
+  --accent:#2D6A4F;   /* deep green */
+  --accent2:#52B788;  /* soft green */
+  --bg:#FFFFFF;
+  --dark:#111827;
+  --mid:#6B7280;
+  --light:#F9FAFB;
+  --border:#E5E7EB;
+  --glass:rgba(255,255,255,.88);
+  --shadow:0 4px 24px rgba(0,0,0,.08);
+  --radius:12px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{background:var(--dark);color:#fff;font-family:'Syne',sans-serif;height:100vh;overflow:hidden;user-select:none;}
+body{background:#111;font-family:'Inter',sans-serif;height:100vh;overflow:hidden;user-select:none;}
 
-/* LOADER */
-#loader{position:fixed;inset:0;background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s;}
-#loader .brand{display:flex;align-items:baseline;gap:.3rem;}
-#loader .brand h1{font-size:clamp(2rem,8vw,3.2rem);font-weight:800;letter-spacing:-2px;background:linear-gradient(135deg,var(--neon),#fff,var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-#loader .brand span{font-family:'Space Mono',monospace;font-size:.7rem;color:var(--neon);letter-spacing:2px;margin-bottom:.2rem;}
-#loader p{font-family:'Space Mono',monospace;font-size:.6rem;color:rgba(255,255,255,.3);margin-top:.5rem;letter-spacing:3px;}
-.lbar{width:160px;height:2px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:1.8rem;}
-.lbar-fill{height:100%;background:linear-gradient(90deg,var(--neon),var(--orange));width:0;transition:width .08s;}
+/* ── LOADER ──────────────────────────────────────────────────*/
+#loader{position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s;}
+#loader-logo{font-size:1.8rem;font-weight:700;color:var(--dark);letter-spacing:-1px;}
+#loader-logo span{color:var(--accent);}
+#loader-sub{font-size:.7rem;color:var(--mid);letter-spacing:2px;margin-top:.3rem;}
+#loader-bar{width:120px;height:2px;background:var(--border);border-radius:99px;overflow:hidden;margin-top:1.6rem;}
+#loader-fill{height:100%;background:var(--accent);width:0;transition:width .08s;}
 
-/* HUD */
+/* ── HUD ────────────────────────────────────────────────────*/
 #hud{position:fixed;inset:0;z-index:10;pointer-events:none;}
 
-/* TOP BAR */
-#topbar{pointer-events:all;position:absolute;top:0;left:0;right:0;padding:.9rem 1rem;background:linear-gradient(to bottom,rgba(10,13,16,.95),transparent);display:flex;align-items:center;justify-content:space-between;gap:.5rem;}
-.logo{font-weight:800;font-size:1rem;letter-spacing:-1px;flex-shrink:0;}
-.logo b{color:var(--neon);}
-.logo small{font-family:'Space Mono',monospace;font-size:.45rem;color:var(--neon);letter-spacing:2px;display:block;margin-top:-2px;}
-#surf-badge{font-family:'Space Mono',monospace;font-size:.48rem;letter-spacing:1px;border-radius:99px;padding:.2rem .6rem;border:1px solid transparent;transition:all .3s;flex-shrink:0;}
-#surf-badge.floor{color:var(--neon);border-color:rgba(0,200,150,.35);}
-#surf-badge.wall{color:var(--orange);border-color:rgba(255,140,0,.35);}
-#surf-badge.ceiling{color:var(--blue);border-color:rgba(68,136,255,.35);}
-.badge{font-family:'Space Mono',monospace;font-size:.48rem;letter-spacing:1px;border:1px solid rgba(0,200,150,.3);border-radius:99px;padding:.2rem .6rem;color:var(--neon);transition:all .3s;flex-shrink:0;}
-.badge.warn{color:var(--red);border-color:rgba(255,45,107,.35);}
+/* ── TOP BAR ─────────────────────────────────────────────── */
+#topbar{
+  pointer-events:all;
+  position:absolute;top:0;left:0;right:0;
+  padding:.8rem 1rem;
+  background:var(--glass);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(255,255,255,.3);
+  display:flex;align-items:center;gap:.6rem;
+}
+#logo{font-size:.95rem;font-weight:700;color:var(--dark);flex:1;letter-spacing:-.4px;}
+#logo span{color:var(--accent);}
+#surf-pill{
+  font-size:.6rem;font-weight:600;letter-spacing:.5px;
+  border-radius:99px;padding:.22rem .7rem;border:1.5px solid;
+  transition:all .3s;flex-shrink:0;display:none;
+}
+#surf-pill.show{display:block;}
+#surf-pill.floor{color:var(--accent);border-color:var(--accent2);background:rgba(82,183,136,.08);}
+#surf-pill.wall{color:#B45309;border-color:#F59E0B;background:rgba(245,158,11,.08);}
+#surf-pill.ceiling{color:#1D4ED8;border-color:#60A5FA;background:rgba(96,165,250,.08);}
+#ar-btn{
+  background:var(--accent);color:#fff;border:none;border-radius:var(--radius);
+  padding:.5rem 1rem;font-family:'Inter',sans-serif;font-weight:600;font-size:.75rem;
+  cursor:pointer;touch-action:manipulation;transition:all .2s;white-space:nowrap;
+  display:flex;align-items:center;gap:.35rem;flex-shrink:0;
+}
+#ar-btn:active{transform:scale(.95);}
+#ar-btn.gone{display:none;}
+#ar-btn.na{background:rgba(239,68,68,.1);color:#EF4444;border:1.5px solid #EF4444;}
 
-/* STATUS */
-#status-wrap{position:absolute;top:3.6rem;left:50%;transform:translateX(-50%);pointer-events:none;}
-#status-text{font-family:'Space Mono',monospace;font-size:.52rem;letter-spacing:1.5px;color:rgba(255,255,255,.5);background:var(--glass);backdrop-filter:blur(8px);border-radius:99px;padding:.28rem .85rem;border:1px solid rgba(255,255,255,.06);white-space:nowrap;}
+/* ── MODE BAR ────────────────────────────────────────────── */
+#mode-bar{
+  pointer-events:all;
+  position:absolute;top:3.6rem;left:50%;transform:translateX(-50%);
+  display:none;gap:0;background:var(--glass);backdrop-filter:blur(12px);
+  border-radius:99px;border:1px solid var(--border);overflow:hidden;
+  box-shadow:var(--shadow);
+}
+#mode-bar.show{display:flex;}
+.mbt{
+  font-size:.65rem;font-weight:600;letter-spacing:.3px;padding:.4rem 1.1rem;
+  border:none;background:transparent;color:var(--mid);cursor:pointer;touch-action:manipulation;transition:all .2s;
+}
+.mbt.on{background:var(--accent);color:#fff;}
 
-/* MODE PILL */
-#mode-pill{pointer-events:all;position:absolute;top:4.8rem;left:50%;transform:translateX(-50%);display:none;border-radius:99px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:var(--glass);backdrop-filter:blur(10px);}
-#mode-pill.show{display:flex;}
-.mpb{font-family:'Space Mono',monospace;font-size:.5rem;letter-spacing:1.2px;padding:.38rem .85rem;cursor:pointer;border:none;background:transparent;color:rgba(255,255,255,.4);transition:all .2s;touch-action:manipulation;}
-.mpb.on{background:var(--neon);color:#000;font-weight:700;}
-
-/* SCAN UI */
-#scan-ui{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.8rem;opacity:0;transition:opacity .4s;}
+/* ── SCAN UI ─────────────────────────────────────────────── */
+#scan-ui{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.9rem;
+  opacity:0;transition:opacity .4s;
+}
 #scan-ui.show{opacity:1;}
-.rings{position:relative;width:96px;height:96px;display:flex;align-items:center;justify-content:center;}
-.ring{position:absolute;border-radius:50%;border:1.5px solid var(--neon);animation:rp 2s ease-in-out infinite;}
-.r1{width:36px;height:36px;}.r2{width:60px;height:60px;animation-delay:.25s;opacity:.6;}.r3{width:88px;height:88px;animation-delay:.5s;opacity:.3;}
-.ch{width:12px;height:12px;position:relative;}
-.ch::before,.ch::after{content:'';position:absolute;background:var(--neon);}
-.ch::before{width:2px;height:12px;left:5px;top:0;}.ch::after{width:12px;height:2px;top:5px;left:0;}
-@keyframes rp{0%,100%{transform:scale(1);}50%{transform:scale(.9);opacity:.3;}}
-.scan-lbl{font-family:'Space Mono',monospace;font-size:.55rem;color:rgba(255,255,255,.45);letter-spacing:2px;text-align:center;line-height:1.9;}
+.scan-rings{position:relative;width:80px;height:80px;display:flex;align-items:center;justify-content:center;}
+.sring{position:absolute;border-radius:50%;border:1.5px solid rgba(255,255,255,.7);animation:rp 2s ease-in-out infinite;}
+.sr1{width:28px;height:28px;}.sr2{width:50px;height:50px;animation-delay:.2s;opacity:.55;}.sr3{width:72px;height:72px;animation-delay:.4s;opacity:.25;}
+@keyframes rp{0%,100%{transform:scale(1);}50%{transform:scale(.88);opacity:.2;}}
+.scan-dot{width:8px;height:8px;border-radius:50%;background:#fff;}
+#scan-lbl{font-size:.65rem;color:rgba(255,255,255,.7);letter-spacing:1.5px;text-align:center;line-height:1.9;font-weight:500;}
 
-/* TAP HINT */
-#tap-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.6rem;opacity:0;transition:opacity .4s;}
-#tap-hint.show{opacity:1;}
-.tap-ring{width:52px;height:52px;border-radius:50%;border:2px solid var(--neon);animation:ping 1.5s ease-out infinite;}
-@keyframes ping{0%{box-shadow:0 0 0 0 rgba(0,200,150,.5);}70%{box-shadow:0 0 0 16px rgba(0,200,150,0);}100%{box-shadow:0 0 0 0 rgba(0,200,150,0);}}
-.tap-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:1.3rem;}
-.tap-lbl{font-family:'Space Mono',monospace;font-size:.55rem;color:var(--neon);letter-spacing:2px;}
+/* ── TAP / GRAB HINTS ────────────────────────────────────── */
+#tap-hint,#grab-hint{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.6rem;
+  opacity:0;transition:opacity .4s;
+}
+#tap-hint.show,#grab-hint.show{opacity:1;}
+.hint-ring{
+  width:48px;height:48px;border-radius:50%;
+  border:2px solid #fff;
+  animation:ping 1.6s ease-out infinite;
+}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(255,255,255,.45);}70%{box-shadow:0 0 0 18px transparent;}100%{box-shadow:0 0 0 0 transparent;}}
+.hint-ring.green{border-color:var(--accent2);animation-name:ping-g;}
+@keyframes ping-g{0%{box-shadow:0 0 0 0 rgba(82,183,136,.5);}70%{box-shadow:0 0 0 18px transparent;}100%{box-shadow:0 0 0 0 transparent;}}
+.hint-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:1.2rem;}
+.hint-lbl{font-size:.6rem;color:rgba(255,255,255,.85);letter-spacing:1.5px;font-weight:600;text-align:center;}
 
-/* MOVE HINT */
-#move-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.7rem;opacity:0;transition:opacity .4s;text-align:center;}
-#move-hint.show{opacity:1;}
-.move-ring{width:56px;height:56px;border-radius:50%;border:2px dashed var(--neon);animation:spin 3s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.move-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:1.3rem;}
-.move-lbl{font-family:'Space Mono',monospace;font-size:.52rem;color:var(--neon);letter-spacing:1.2px;line-height:1.8;}
+/* ── BOTTOM PANEL (place mode info) ─────────────────────── */
+#place-panel{
+  pointer-events:all;
+  position:absolute;bottom:9.5rem;left:.9rem;right:.9rem;
+  display:none;
+  background:var(--glass);backdrop-filter:blur(14px);
+  border-radius:var(--radius);border:1px solid var(--border);
+  padding:.8rem 1rem;box-shadow:var(--shadow);
+}
+#place-panel.show{display:block;}
+#pp-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem;}
+#pp-name{font-size:.9rem;font-weight:700;color:var(--dark);}
+#pp-price{font-size:1rem;font-weight:700;color:var(--accent);}
+#pp-dims{font-size:.62rem;color:var(--mid);margin-top:.15rem;}
+#pp-surface{
+  font-size:.58rem;font-weight:600;border-radius:99px;padding:.18rem .55rem;
+  border:1px solid;margin-top:.3rem;display:inline-block;
+}
+#pp-surface.floor{color:var(--accent);border-color:var(--accent2);background:rgba(82,183,136,.08);}
+#pp-surface.wall{color:#B45309;border-color:#F59E0B;background:rgba(245,158,11,.08);}
+#pp-surface.ceiling{color:#1D4ED8;border-color:#60A5FA;background:rgba(96,165,250,.08);}
 
-/* GRABBED */
-#grabbed-ind{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:none;flex-direction:column;align-items:center;gap:.6rem;}
-#grabbed-ind.show{display:flex;}
-.grab-ring{width:60px;height:60px;border-radius:50%;border:2px solid var(--neon);box-shadow:0 0 20px rgba(0,200,150,.35);animation:gpulse 1s ease-in-out infinite;}
-@keyframes gpulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.6;transform:scale(.94);}}
-.grab-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:1.2rem;}
-.grab-lbl{font-family:'Space Mono',monospace;font-size:.52rem;color:var(--neon);letter-spacing:1.2px;}
+/* Variants */
+#pp-variants{display:flex;gap:.4rem;margin:.55rem 0 .6rem;}
+.vdot{
+  width:20px;height:20px;border-radius:50%;cursor:pointer;
+  border:2px solid var(--border);transition:all .15s;touch-action:manipulation;
+}
+.vdot.on{border-color:var(--dark);box-shadow:0 0 0 2px rgba(0,0,0,.15);}
 
-/* PRODUCT INFO OVERLAY — shown when object is selected/placed */
-#product-panel{pointer-events:all;position:absolute;bottom:13rem;left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:.4rem;min-width:220px;}
-#product-panel.show{display:flex;}
-.prod-card{background:var(--glass);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:.7rem 1rem;width:100%;display:flex;flex-direction:column;gap:.35rem;}
-.prod-name{font-size:.85rem;font-weight:700;letter-spacing:-.3px;}
-.prod-price{font-family:'Space Mono',monospace;font-size:.75rem;color:var(--neon);font-weight:700;}
-.prod-dims{font-family:'Space Mono',monospace;font-size:.48rem;color:rgba(255,255,255,.4);letter-spacing:1px;}
-.prod-surface{font-family:'Space Mono',monospace;font-size:.44rem;border-radius:99px;padding:.15rem .5rem;display:inline-block;margin-top:.1rem;}
-.prod-surface.floor{background:rgba(0,200,150,.12);color:var(--neon);}
-.prod-surface.wall{background:rgba(255,140,0,.12);color:var(--orange);}
-.prod-surface.ceiling{background:rgba(68,136,255,.12);color:var(--blue);}
-/* Variant switcher */
-.variants-row{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.15rem;}
-.var-btn{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:all .15s;touch-action:manipulation;}
-.var-btn.active{border-color:#fff;box-shadow:0 0 6px rgba(255,255,255,.5);}
-/* Action row */
-.action-row{display:flex;gap:.45rem;width:100%;}
-.act-btn{flex:1;border:none;border-radius:10px;padding:.55rem .4rem;font-family:'Syne',sans-serif;font-weight:700;font-size:.7rem;cursor:pointer;touch-action:manipulation;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:.3rem;}
-.act-btn:active{transform:scale(.94);}
-.btn-cart{background:var(--neon);color:#000;}
-.btn-wish{background:rgba(255,45,107,.15);color:var(--red);border:1px solid rgba(255,45,107,.3);}
-.btn-wish.wished{background:rgba(255,45,107,.3);border-color:var(--red);}
-/* Rotate hint */
-.rotate-hint{font-family:'Space Mono',monospace;font-size:.46rem;color:rgba(255,255,255,.3);text-align:center;letter-spacing:1px;}
+/* Action buttons */
+#pp-actions{display:flex;gap:.5rem;}
+.pp-btn{
+  flex:1;border:none;border-radius:9px;padding:.55rem;
+  font-family:'Inter',sans-serif;font-weight:600;font-size:.72rem;
+  cursor:pointer;touch-action:manipulation;transition:all .2s;
+}
+.pp-btn:active{transform:scale(.95);}
+#btn-add-cart{background:var(--accent);color:#fff;}
+#btn-wishlist{background:var(--light);color:var(--dark);border:1px solid var(--border);}
+#btn-wishlist.wished{background:#FFF0F0;color:#EF4444;border-color:#FCA5A5;}
 
-/* RAIL */
-#rail{pointer-events:all;position:absolute;right:.85rem;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:.45rem;}
-.rb{width:44px;height:44px;border-radius:11px;border:1px solid rgba(255,255,255,.1);background:var(--glass);backdrop-filter:blur(10px);color:#fff;font-size:.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;transition:all .18s;flex-direction:column;gap:1px;}
-.rb:active{transform:scale(.9);}
-.rb:hover{border-color:var(--neon);}
-.rb.red:hover{border-color:var(--red);}
-.rb.active-btn{border-color:var(--neon);background:rgba(0,200,150,.12);}
-.rl{font-family:'Space Mono',monospace;font-size:.38rem;color:rgba(255,255,255,.22);text-align:center;letter-spacing:.5px;}
+/* rotate hint */
+#rotate-hint{font-size:.58rem;color:var(--mid);text-align:center;margin-top:.5rem;}
 
-/* SCREENSHOT flash */
-#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9998;transition:opacity .05s;}
-
-/* TRAY */
-#tray{pointer-events:all;position:absolute;bottom:0;left:0;right:0;padding:.7rem 1rem calc(env(safe-area-inset-bottom,0px) + .9rem);background:linear-gradient(to top,rgba(10,13,16,.97) 55%,transparent);}
-.tray-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;}
-.tray-lbl{font-family:'Space Mono',monospace;font-size:.5rem;color:rgba(255,255,255,.28);letter-spacing:3px;}
-.tray-right{display:flex;gap:.5rem;align-items:center;}
-#pcnt-lbl{font-family:'Space Mono',monospace;font-size:.5rem;color:rgba(255,255,255,.28);}
-#pcnt-lbl span{color:var(--neon);font-weight:700;}
-#wish-count{font-family:'Space Mono',monospace;font-size:.5rem;color:var(--red);display:none;}
-#wish-count.show{display:block;}
-#cards{display:flex;gap:.5rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.1rem;}
+/* ── BOTTOM TRAY ─────────────────────────────────────────── */
+#tray{
+  pointer-events:all;
+  position:absolute;bottom:0;left:0;right:0;
+  background:var(--glass);backdrop-filter:blur(14px);
+  border-top:1px solid var(--border);
+  padding:.65rem .9rem calc(env(safe-area-inset-bottom,0px)+.65rem);
+}
+#tray-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;}
+#tray-label{font-size:.6rem;font-weight:600;color:var(--mid);letter-spacing:1px;}
+#tray-right{display:flex;gap:.5rem;align-items:center;}
+#placed-lbl{font-size:.6rem;color:var(--mid);}
+#placed-lbl strong{color:var(--accent);}
+#list-btn{
+  font-size:.6rem;font-weight:600;color:var(--accent);background:rgba(45,106,79,.08);
+  border:1px solid rgba(45,106,79,.2);border-radius:6px;padding:.22rem .6rem;
+  cursor:pointer;touch-action:manipulation;display:flex;align-items:center;gap:.3rem;
+}
+#cards{display:flex;gap:.45rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.05rem;}
 #cards::-webkit-scrollbar{display:none;}
-.card{flex-shrink:0;width:72px;background:var(--card-bg);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:.45rem .35rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.22rem;touch-action:manipulation;transition:all .2s cubic-bezier(.34,1.56,.64,1);}
-.card:active{transform:scale(.9);}
-.card.sel{border-color:var(--neon);background:rgba(0,200,150,.07);transform:translateY(-4px);box-shadow:0 0 16px rgba(0,200,150,.15);}
-.card .em{font-size:1.3rem;line-height:1;}
-.card .nm{font-family:'Space Mono',monospace;font-size:.44rem;color:rgba(255,255,255,.4);text-align:center;line-height:1.3;}
-.card .pr{font-family:'Space Mono',monospace;font-size:.44rem;color:var(--neon);font-weight:700;}
-.card.sel .nm{color:rgba(255,255,255,.7);}
-.card .surf-dot{width:6px;height:6px;border-radius:50%;margin-top:.1rem;}
-.card .surf-dot.floor{background:var(--neon);}
-.card .surf-dot.wall{background:var(--orange);}
-.card .surf-dot.ceiling{background:var(--blue);}
+.card{
+  flex-shrink:0;width:68px;
+  background:#fff;border:1.5px solid var(--border);
+  border-radius:10px;padding:.4rem .3rem;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:.2rem;
+  touch-action:manipulation;transition:all .18s;
+}
+.card:active{transform:scale(.92);}
+.card.sel{border-color:var(--accent);background:rgba(45,106,79,.05);}
+.card .cem{font-size:1.25rem;line-height:1;}
+.card .cnm{font-size:.42rem;color:var(--mid);text-align:center;font-weight:500;line-height:1.3;}
+.card .cpr{font-size:.44rem;color:var(--accent);font-weight:700;}
+.card .cdot{width:5px;height:5px;border-radius:50%;}
+.card .cdot.floor{background:var(--accent2);}
+.card .cdot.wall{background:#F59E0B;}
+.card .cdot.ceiling{background:#60A5FA;}
+.card.sel .cnm{color:var(--accent);}
 
-/* ENTER AR */
-#enter-ar{pointer-events:all;position:absolute;bottom:9.5rem;left:50%;transform:translateX(-50%);background:var(--neon);color:#000;border:none;border-radius:99px;padding:.8rem 1.8rem;font-family:'Syne',sans-serif;font-weight:800;font-size:.85rem;cursor:pointer;box-shadow:0 0 28px rgba(0,200,150,.4);transition:all .25s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:.4rem;white-space:nowrap;touch-action:manipulation;}
-#enter-ar:hover{transform:translateX(-50%) scale(1.04);}
-#enter-ar:active{transform:translateX(-50%) scale(.95);}
-#enter-ar.gone{display:none;}
-#enter-ar.na{background:rgba(255,45,107,.12);color:var(--red);border:1px solid rgba(255,45,107,.3);box-shadow:none;}
+/* ── RIGHT RAIL ──────────────────────────────────────────── */
+#rail{
+  pointer-events:all;
+  position:absolute;right:.75rem;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:.4rem;
+}
+.rb{
+  width:40px;height:40px;border-radius:10px;
+  border:1px solid var(--border);background:var(--glass);backdrop-filter:blur(10px);
+  color:var(--dark);font-size:.85rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  touch-action:manipulation;transition:all .18s;flex-direction:column;gap:1px;
+}
+.rb:active{transform:scale(.9);}
+.rb-lbl{font-size:.35rem;color:var(--mid);font-weight:500;letter-spacing:.3px;}
+.rb.danger{color:#EF4444;}
 
-/* CART NOTIFICATION */
-#cart-notif{position:fixed;top:4rem;right:1rem;background:var(--neon);color:#000;border-radius:99px;padding:.4rem .9rem;font-family:'Space Mono',monospace;font-size:.58rem;font-weight:700;z-index:9999;opacity:0;transform:translateY(-8px);transition:all .25s;pointer-events:none;}
-#cart-notif.show{opacity:1;transform:translateY(0);}
+/* ── CART DRAWER ─────────────────────────────────────────── */
+#cart-drawer{
+  pointer-events:all;
+  position:fixed;bottom:-100%;left:0;right:0;
+  background:#fff;border-top:1px solid var(--border);
+  border-radius:20px 20px 0 0;
+  padding:0 1rem calc(env(safe-area-inset-bottom,0px)+1rem);
+  z-index:300;transition:bottom .3s cubic-bezier(.34,1.1,.64,1);
+  max-height:70vh;display:flex;flex-direction:column;
+}
+#cart-drawer.open{bottom:0;}
+#cart-handle{width:36px;height:4px;background:var(--border);border-radius:99px;margin:.75rem auto .9rem;}
+#cart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;padding-bottom:.65rem;border-bottom:1px solid var(--border);}
+#cart-title{font-size:1rem;font-weight:700;color:var(--dark);}
+#cart-close{font-size:.65rem;color:var(--mid);cursor:pointer;padding:.2rem .5rem;border:1px solid var(--border);border-radius:6px;}
+#cart-items{flex:1;overflow-y:auto;}
+.ci{display:flex;align-items:center;gap:.75rem;padding:.55rem 0;border-bottom:1px solid var(--border);}
+.ci-em{font-size:1.5rem;width:36px;text-align:center;flex-shrink:0;}
+.ci-info{flex:1;}
+.ci-name{font-size:.82rem;font-weight:600;color:var(--dark);}
+.ci-surface{font-size:.58rem;color:var(--mid);margin-top:.1rem;}
+.ci-price{font-size:.8rem;font-weight:700;color:var(--accent);margin-left:auto;flex-shrink:0;}
+#cart-footer{padding-top:.75rem;border-top:1px solid var(--border);margin-top:.5rem;}
+#cart-total{display:flex;justify-content:space-between;margin-bottom:.65rem;}
+#cart-total-lbl{font-size:.82rem;color:var(--mid);font-weight:500;}
+#cart-total-val{font-size:1rem;font-weight:700;color:var(--dark);}
+#checkout-btn{
+  width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);
+  padding:.75rem;font-family:'Inter',sans-serif;font-weight:700;font-size:.85rem;
+  cursor:pointer;touch-action:manipulation;transition:background .2s;
+}
+#checkout-btn:active{background:#1B4D38;}
+#cart-empty{font-size:.7rem;color:var(--mid);text-align:center;padding:1.5rem 0;letter-spacing:.5px;}
 
-/* TOAST */
-#toast{position:fixed;bottom:9rem;left:50%;transform:translateX(-50%) translateY(8px);font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:1px;color:var(--neon);background:rgba(0,200,150,.1);border:1px solid rgba(0,200,150,.28);border-radius:99px;padding:.38rem .95rem;white-space:nowrap;pointer-events:none;z-index:9999;opacity:0;transition:all .22s;}
+/* ── FLASH / TOAST ───────────────────────────────────────── */
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9998;transition:opacity .04s;}
+#toast{
+  position:fixed;bottom:9.2rem;left:50%;transform:translateX(-50%) translateY(6px);
+  font-size:.65rem;font-weight:600;color:var(--dark);
+  background:#fff;border:1px solid var(--border);
+  border-radius:99px;padding:.38rem 1rem;white-space:nowrap;
+  pointer-events:none;z-index:9999;opacity:0;transition:all .22s;
+  box-shadow:var(--shadow);
+}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
-
-/* WISHLIST DRAWER */
-#wish-drawer{pointer-events:all;position:fixed;bottom:-100%;left:0;right:0;background:var(--dark);border-top:1px solid rgba(255,255,255,.08);border-radius:20px 20px 0 0;padding:1.2rem 1rem calc(env(safe-area-inset-bottom,0px)+1rem);z-index:200;transition:bottom .35s cubic-bezier(.34,1.1,.64,1);max-height:55vh;overflow-y:auto;}
-#wish-drawer.open{bottom:0;}
-#wish-drawer h3{font-size:.9rem;font-weight:800;margin-bottom:.8rem;display:flex;justify-content:space-between;align-items:center;}
-#wish-drawer h3 span{font-family:'Space Mono',monospace;font-size:.5rem;color:rgba(255,255,255,.3);cursor:pointer;letter-spacing:1px;padding:.2rem .5rem;border:1px solid rgba(255,255,255,.1);border-radius:99px;}
-.wish-item{display:flex;align-items:center;gap:.7rem;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.05);}
-.wish-item .wi-em{font-size:1.4rem;}
-.wish-item .wi-info{flex:1;}
-.wish-item .wi-name{font-size:.8rem;font-weight:700;}
-.wish-item .wi-price{font-family:'Space Mono',monospace;font-size:.6rem;color:var(--neon);}
-.wish-item .wi-rm{font-size:.7rem;color:rgba(255,255,255,.3);cursor:pointer;padding:.3rem;}
-#wish-empty{font-family:'Space Mono',monospace;font-size:.6rem;color:rgba(255,255,255,.25);text-align:center;padding:1.5rem 0;letter-spacing:1px;}
-
-body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;background:repeating-linear-gradient(to bottom,transparent 0,transparent 3px,rgba(0,0,0,.015) 3px,rgba(0,0,0,.015) 4px);}
 </style>
 </head>
 <body>
+
+<!-- LOADER -->
 <div id="loader">
-  <div class="brand"><h1>MIRA</h1><span>AR ZONE</span></div>
-  <p>FURNITURE PREVIEW · POWERED BY WEBXR</p>
-  <div class="lbar"><div class="lbar-fill" id="lfill"></div></div>
+  <div id="loader-logo">MIRA <span>HOME</span></div>
+  <div id="loader-sub">AR ZONE · FURNITURE PREVIEW</div>
+  <div id="loader-bar"><div id="loader-fill"></div></div>
 </div>
 
+<!-- HUD -->
 <div id="hud">
+
+  <!-- TOP BAR -->
   <div id="topbar">
-    <div class="logo">MIRA <b>HOME</b><small>AR ZONE</small></div>
-    <div id="surf-badge"></div>
-    <div class="badge" id="badge">● READY</div>
+    <div id="logo">MIRA <span>HOME</span></div>
+    <div id="surf-pill"></div>
+    <button id="ar-btn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+      View in AR
+    </button>
   </div>
-  <div id="status-wrap"><span id="status-text">SELECT FURNITURE · TAP ENTER AR</span></div>
 
-  <div id="mode-pill">
-    <button class="mpb on" id="mp-place">＋ PLACE</button>
-    <button class="mpb" id="mp-move">✥ MOVE</button>
+  <!-- MODE BAR -->
+  <div id="mode-bar">
+    <button class="mbt on" id="mb-place">Place</button>
+    <button class="mbt" id="mb-move">Move &amp; Rotate</button>
   </div>
 
+  <!-- SCAN UI -->
   <div id="scan-ui">
-    <div class="rings"><div class="ring r3"></div><div class="ring r2"></div><div class="ring r1"></div><div class="ch"></div></div>
-    <div class="scan-lbl">POINT AT ANY SURFACE<br>FLOOR · WALL · CEILING</div>
-  </div>
-  <div id="tap-hint">
-    <div style="position:relative;width:52px;height:52px;"><div class="tap-ring"></div><div class="tap-icon">👆</div></div>
-    <div class="tap-lbl">TAP TO PLACE</div>
-  </div>
-  <div id="move-hint">
-    <div style="position:relative;width:56px;height:56px;"><div class="move-ring"></div><div class="move-icon">✥</div></div>
-    <div class="move-lbl">POINT AT FURNITURE<br>TAP TO GRAB</div>
-  </div>
-  <div id="grabbed-ind">
-    <div style="position:relative;width:60px;height:60px;"><div class="grab-ring"></div><div class="grab-icon">✊</div></div>
-    <div class="grab-lbl">MOVE PHONE · TAP TO DROP</div>
-  </div>
-
-  <!-- Product info panel shown after placement -->
-  <div id="product-panel">
-    <div class="prod-card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div>
-          <div class="prod-name" id="pp-name">—</div>
-          <div class="prod-price" id="pp-price">—</div>
-          <div class="prod-dims" id="pp-dims">—</div>
-        </div>
-        <div id="pp-surface-badge" class="prod-surface">—</div>
-      </div>
-      <div class="variants-row" id="pp-variants"></div>
-      <div class="action-row">
-        <button class="act-btn btn-cart" id="btn-cart">🛒 Add to Cart</button>
-        <button class="act-btn btn-wish" id="btn-wish">♡</button>
-      </div>
-      <div class="rotate-hint">SWIPE LEFT/RIGHT ON MODEL TO ROTATE</div>
+    <div class="scan-rings">
+      <div class="sring sr3"></div><div class="sring sr2"></div><div class="sring sr1"></div>
+      <div class="scan-dot"></div>
     </div>
+    <div id="scan-lbl">POINT AT A SURFACE<br>FLOOR · WALL · CEILING</div>
   </div>
 
+  <!-- TAP HINT (place mode) -->
+  <div id="tap-hint">
+    <div style="position:relative;width:48px;height:48px;">
+      <div class="hint-ring green"></div>
+      <div class="hint-icon">👆</div>
+    </div>
+    <div class="hint-lbl">TAP TO PLACE</div>
+  </div>
+
+  <!-- GRAB HINT (move mode, no object grabbed) -->
+  <div id="grab-hint">
+    <div style="position:relative;width:48px;height:48px;">
+      <div class="hint-ring"></div>
+      <div class="hint-icon">✋</div>
+    </div>
+    <div class="hint-lbl">TAP OBJECT TO SELECT<br>SWIPE TO ROTATE</div>
+  </div>
+
+  <!-- PRODUCT PANEL (shown after placing) -->
+  <div id="place-panel">
+    <div id="pp-top">
+      <div>
+        <div id="pp-name">—</div>
+        <div id="pp-dims">—</div>
+        <div id="pp-surface">—</div>
+      </div>
+      <div id="pp-price">—</div>
+    </div>
+    <div id="pp-variants"></div>
+    <div id="pp-actions">
+      <button class="pp-btn" id="btn-add-cart">🛒 Add to Cart</button>
+      <button class="pp-btn" id="btn-wishlist">♡ Save</button>
+    </div>
+    <div id="rotate-hint" style="display:none">Swipe left/right on the model to rotate · Use ±  to resize</div>
+  </div>
+
+  <!-- RIGHT RAIL -->
   <div id="rail">
-    <div><button class="rb" id="b-undo">↩</button><div class="rl">UNDO</div></div>
-    <div><button class="rb" id="b-up">⊕</button><div class="rl">BIGGER</div></div>
-    <div><button class="rb" id="b-dn">⊖</button><div class="rl">SMALLER</div></div>
-    <div><button class="rb" id="b-shot">📸</button><div class="rl">PHOTO</div></div>
-    <div><button class="rb" id="b-wish">♡</button><div class="rl">LIST</div></div>
-    <div><button class="rb red" id="b-clr">✕</button><div class="rl">CLEAR</div></div>
+    <div><button class="rb" id="rb-undo">↩<div class="rb-lbl">UNDO</div></button></div>
+    <div><button class="rb" id="rb-plus">＋<div class="rb-lbl">SIZE</div></button></div>
+    <div><button class="rb" id="rb-minus">－<div class="rb-lbl">SIZE</div></button></div>
+    <div><button class="rb" id="rb-photo">📸<div class="rb-lbl">PHOTO</div></button></div>
+    <div><button class="rb danger" id="rb-clear">✕<div class="rb-lbl">CLEAR</div></button></div>
   </div>
 
+  <!-- TRAY -->
   <div id="tray">
-    <div class="tray-hd">
-      <div class="tray-lbl">FURNITURE</div>
-      <div class="tray-right">
-        <div id="wish-count">♡ <span id="wc">0</span></div>
-        <div id="pcnt-lbl">PLACED <span id="pcnt">0</span></div>
+    <div id="tray-header">
+      <div id="tray-label">FURNITURE</div>
+      <div id="tray-right">
+        <div id="placed-lbl">Placed <strong id="pcnt">0</strong></div>
+        <div id="list-btn">🛒 Cart <span id="cart-count">0</span></div>
       </div>
     </div>
     <div id="cards"></div>
   </div>
 
-  <button id="enter-ar">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-    ENTER AR
-  </button>
+</div><!-- /hud -->
+
+<!-- CART DRAWER -->
+<div id="cart-drawer">
+  <div id="cart-handle"></div>
+  <div id="cart-head">
+    <div id="cart-title">Cart</div>
+    <div id="cart-close">Close</div>
+  </div>
+  <div id="cart-items"><div id="cart-empty">No items yet</div></div>
+  <div id="cart-footer">
+    <div id="cart-total">
+      <div id="cart-total-lbl">Total</div>
+      <div id="cart-total-val">₱0</div>
+    </div>
+    <button id="checkout-btn">Proceed to Checkout →</button>
+  </div>
 </div>
 
-<!-- Wishlist drawer -->
-<div id="wish-drawer">
-  <h3>Wishlist <span id="wish-close">CLOSE ✕</span></h3>
-  <div id="wish-list"><div id="wish-empty">NO ITEMS YET</div></div>
-</div>
-
-<div id="cart-notif">🛒 Added to cart!</div>
 <div id="flash"></div>
 <div id="toast"></div>
 
@@ -272,886 +382,652 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;b
 (function(){
 'use strict';
 
-// ── PRODUCT CATALOG ─────────────────────────────────────────────────────────
-// Each product: id, name, price (PHP), dims (W×D×H cm), surface, emoji,
-// variants (color swatches), builder function
-var CATALOG = [
-  // FLOOR items
-  {
-    id:'sofa', name:'Rattan Sofa', price:8500, dims:'160×75×85cm',
-    surface:'floor', em:'🛋️',
-    variants:['#C4956A','#8B6343','#D4B896'],
-    fn: mkSofa
-  },
-  {
-    id:'armchair', name:'Rattan Armchair', price:3200, dims:'75×70×85cm',
-    surface:'floor', em:'🪑',
-    variants:['#C4956A','#8B6343','#5C3D1E'],
-    fn: mkArmchair
-  },
-  {
-    id:'table', name:'Coffee Table', price:2800, dims:'110×55×45cm',
-    surface:'floor', em:'🪵',
-    variants:['#C4956A','#8B6343'],
-    fn: mkCoffeeTable
-  },
-  {
-    id:'shelf', name:'Floor Shelf', price:3500, dims:'80×30×150cm',
-    surface:'floor', em:'📚',
-    variants:['#C4956A','#8B6343','#D4B896'],
-    fn: mkFloorShelf
-  },
-  {
-    id:'stool', name:'Rattan Stool', price:1200, dims:'40×40×45cm',
-    surface:'floor', em:'🪑',
-    variants:['#C4956A','#8B6343'],
-    fn: mkStool
-  },
-  // WALL items
-  {
-    id:'wallshelf', name:'Wall Shelf', price:1800, dims:'60×20×15cm',
-    surface:'wall', em:'🗄️',
-    variants:['#C4956A','#8B6343','#D4B896'],
-    fn: mkWallShelf
-  },
-  {
-    id:'wallclock', name:'Rattan Clock', price:950, dims:'40×5×40cm',
-    surface:'wall', em:'🕐',
-    variants:['#C4956A','#8B6343','#1a1a1a'],
-    fn: mkWallClock
-  },
-  {
-    id:'mirror', name:'Rattan Mirror', price:2200, dims:'50×5×70cm',
-    surface:'wall', em:'🪞',
-    variants:['#C4956A','#8B6343'],
-    fn: mkWallMirror
-  },
-  // CEILING items
-  {
-    id:'pendant', name:'Pendant Lamp', price:2400, dims:'40×40×60cm',
-    surface:'ceiling', em:'💡',
-    variants:['#C4956A','#8B6343','#fff8e7'],
-    fn: mkPendantLamp
-  },
-  {
-    id:'hangplant', name:'Hanging Planter', price:1100, dims:'25×25×35cm',
-    surface:'ceiling', em:'🪴',
-    variants:['#C4956A','#2d5a1b','#8B6343'],
-    fn: mkHangingPlant
-  },
+// ── CATALOG ──────────────────────────────────────────────────
+var CATALOG=[
+  {id:'sofa',      name:'Rattan Sofa',       price:8500, dims:'160×75×85 cm', surface:'floor',   em:'🛋️', variants:['#C4956A','#8B6343','#D4B896'], fn:mkSofa},
+  {id:'armchair',  name:'Rattan Armchair',   price:3200, dims:'75×70×85 cm',  surface:'floor',   em:'🪑', variants:['#C4956A','#8B6343','#5C3D1E'], fn:mkArmchair},
+  {id:'table',     name:'Coffee Table',      price:2800, dims:'110×55×45 cm', surface:'floor',   em:'🪵', variants:['#C4956A','#8B6343'],           fn:mkCoffeeTable},
+  {id:'shelf',     name:'Floor Shelf',       price:3500, dims:'80×30×150 cm', surface:'floor',   em:'📚', variants:['#C4956A','#8B6343','#D4B896'], fn:mkFloorShelf},
+  {id:'stool',     name:'Rattan Stool',      price:1200, dims:'40×40×45 cm',  surface:'floor',   em:'🪑', variants:['#C4956A','#8B6343'],           fn:mkStool},
+  {id:'wallshelf', name:'Wall Shelf',        price:1800, dims:'60×20×15 cm',  surface:'wall',    em:'🗄️', variants:['#C4956A','#8B6343','#D4B896'], fn:mkWallShelf},
+  {id:'wallclock', name:'Rattan Clock',      price:950,  dims:'40×5×40 cm',   surface:'wall',    em:'🕐', variants:['#C4956A','#8B6343','#1a1a1a'], fn:mkWallClock},
+  {id:'mirror',    name:'Rattan Mirror',     price:2200, dims:'50×5×70 cm',   surface:'wall',    em:'🪞', variants:['#C4956A','#8B6343'],           fn:mkWallMirror},
+  {id:'pendant',   name:'Pendant Lamp',      price:2400, dims:'40×40×60 cm',  surface:'ceiling', em:'💡', variants:['#C4956A','#8B6343','#fff8e7'], fn:mkPendantLamp},
+  {id:'hangplant', name:'Hanging Planter',   price:1100, dims:'25×25×35 cm',  surface:'ceiling', em:'🪴', variants:['#C4956A','#2d5a1b','#8B6343'], fn:mkHangingPlant},
 ];
 
-// ── 3D FURNITURE BUILDERS ───────────────────────────────────────────────────
-// All use rattan-like material colors. Each group origin = surface contact point.
-// variantColor is applied to the primary rattan material.
+// ── MATERIALS ────────────────────────────────────────────────
+var activeVC=null;
+function ratMat(c,r,m){return new THREE.MeshStandardMaterial({color:c||0xC4956A,roughness:r||.75,metalness:m||.05});}
+function cushMat(c){return new THREE.MeshStandardMaterial({color:c||0x8B7355,roughness:.9,metalness:0});}
+function getVC(def){return activeVC?parseInt(activeVC.replace('#','0x')):parseInt(def.replace('#','0x'));}
 
-var activeVariantColor = null; // set before calling builder
-
-function ratMat(c, r, m) {
-  return new THREE.MeshStandardMaterial({color: c||0xC4956A, roughness: r||.75, metalness: m||.05});
+// ── 3D BUILDERS ──────────────────────────────────────────────
+function mkSofa(){
+  var g=new THREE.Group(),vc=getVC('#C4956A');
+  var base=new THREE.Mesh(new THREE.BoxGeometry(.55,.12,.28),ratMat(vc));base.position.y=.06;g.add(base);
+  var seat=new THREE.Mesh(new THREE.BoxGeometry(.52,.08,.24),cushMat(0xA0785A));seat.position.y=.14;g.add(seat);
+  var back=new THREE.Mesh(new THREE.BoxGeometry(.55,.3,.05),ratMat(vc));back.position.set(0,.24,-.115);g.add(back);
+  var bcush=new THREE.Mesh(new THREE.BoxGeometry(.5,.26,.04),cushMat(0xA0785A));bcush.position.set(0,.24,-.09);g.add(bcush);
+  [-1,1].forEach(function(s){var arm=new THREE.Mesh(new THREE.BoxGeometry(.05,.18,.28),ratMat(vc));arm.position.set(s*.3,.1,0);g.add(arm);});
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(p){var leg=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.06,6),ratMat(vc*.8));leg.position.set(p[0]*.25,.03,p[1]*.12);g.add(leg);});
+  return g;
 }
-function cushMat(c) {
-  return new THREE.MeshStandardMaterial({color: c||0x8B7355, roughness: .9, metalness: 0});
+function mkArmchair(){
+  var g=new THREE.Group(),vc=getVC('#C4956A');
+  var base=new THREE.Mesh(new THREE.BoxGeometry(.28,.1,.26),ratMat(vc));base.position.y=.18;g.add(base);
+  var seat=new THREE.Mesh(new THREE.BoxGeometry(.25,.07,.22),cushMat(0x9B7B5B));seat.position.y=.245;g.add(seat);
+  var back=new THREE.Mesh(new THREE.BoxGeometry(.28,.28,.05),ratMat(vc));back.position.set(0,.33,-.105);g.add(back);
+  var bcush=new THREE.Mesh(new THREE.BoxGeometry(.24,.24,.04),cushMat(0x9B7B5B));bcush.position.set(0,.33,-.082);g.add(bcush);
+  [-1,1].forEach(function(s){var arm=new THREE.Mesh(new THREE.BoxGeometry(.04,.12,.26),ratMat(vc));arm.position.set(s*.15,.22,0);g.add(arm);});
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(p){var leg=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,.18,6),ratMat(vc));leg.position.set(p[0]*.12,.09,p[1]*.1);g.add(leg);});
+  return g;
 }
-function getVC(def) {
-  if(activeVariantColor) return parseInt(activeVariantColor.replace('#','0x'));
-  return parseInt(def.replace('#','0x'));
+function mkCoffeeTable(){
+  var g=new THREE.Group(),vc=getVC('#C4956A');
+  var top=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.025,32),ratMat(vc));top.position.y=.155;g.add(top);
+  var glass=new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.01,32),new THREE.MeshStandardMaterial({color:0xaaddff,transparent:true,opacity:.25,roughness:.05}));glass.position.y=.175;g.add(glass);
+  var barrel=new THREE.Mesh(new THREE.CylinderGeometry(.14,.16,.12,12,1,true),ratMat(vc));barrel.position.y=.06;g.add(barrel);
+  var bot=new THREE.Mesh(new THREE.TorusGeometry(.14,.015,8,24),ratMat(vc*.9));bot.rotation.x=Math.PI/2;bot.position.y=.015;g.add(bot);
+  return g;
 }
-
-// SOFA — 3-seat rattan sofa, sits on floor
-function mkSofa() {
-  var g = new THREE.Group();
-  var vc = getVC('#C4956A');
-  // Base frame
-  var base = new THREE.Mesh(new THREE.BoxGeometry(.55,.12,.28), ratMat(vc));
-  base.position.y = .06; g.add(base);
-  // Seat cushion
-  var seat = new THREE.Mesh(new THREE.BoxGeometry(.52,.08,.24), cushMat(0xA0785A));
-  seat.position.y = .14; g.add(seat);
-  // Back frame
-  var back = new THREE.Mesh(new THREE.BoxGeometry(.55,.3,.05), ratMat(vc));
-  back.position.set(0,.24,-.115); g.add(back);
-  // Back cushion
-  var bcush = new THREE.Mesh(new THREE.BoxGeometry(.5,.26,.04), cushMat(0xA0785A));
-  bcush.position.set(0,.24,-.09); g.add(bcush);
-  // Armrests
-  [-1,1].forEach(function(s){
-    var arm = new THREE.Mesh(new THREE.BoxGeometry(.05,.18,.28), ratMat(vc));
-    arm.position.set(s*.3,.1,0); g.add(arm);
-  });
-  // Legs
-  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(p){
-    var leg = new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.06,6), ratMat(vc*.8));
-    leg.position.set(p[0]*.25,.03,p[1]*.12); g.add(leg);
-  });
+function mkFloorShelf(){
+  var g=new THREE.Group(),vc=getVC('#C4956A');
+  [-1,1].forEach(function(s){var side=new THREE.Mesh(new THREE.BoxGeometry(.025,.5,.18),ratMat(vc));side.position.set(s*.14,.25,0);g.add(side);});
+  [0,.12,.28,.44,.5].forEach(function(y){var shelf=new THREE.Mesh(new THREE.BoxGeometry(.28,.015,.18),ratMat(vc*.9));shelf.position.y=y;g.add(shelf);});
+  var back=new THREE.Mesh(new THREE.BoxGeometry(.28,.5,.012),ratMat(vc*.85));back.position.set(0,.25,-.085);g.add(back);
+  return g;
+}
+function mkStool(){
+  var g=new THREE.Group(),vc=getVC('#C4956A');
+  var top=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,.06,16),ratMat(vc));top.position.y=.15;g.add(top);
+  var cush=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.04,16),cushMat(0x9B7B5B));cush.position.y=.2;g.add(cush);
+  for(var i=0;i<3;i++){var a=(i/3)*Math.PI*2;var leg=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.14,6),ratMat(vc));leg.position.set(Math.cos(a)*.07,.07,Math.sin(a)*.07);leg.rotation.z=Math.sin(a)*.15;leg.rotation.x=-Math.cos(a)*.15;g.add(leg);}
+  return g;
+}
+function mkWallShelf(){
+  var g=new THREE.Group(),vc=getVC('#C4956A');
+  var board=new THREE.Mesh(new THREE.BoxGeometry(.24,.025,.12),ratMat(vc));board.position.y=.012;g.add(board);
+  var back=new THREE.Mesh(new THREE.BoxGeometry(.24,.1,.015),ratMat(vc*.85));back.position.set(0,.06,-.055);g.add(back);
+  [-1,1].forEach(function(s){var br=new THREE.Mesh(new THREE.BoxGeometry(.012,.06,.1),ratMat(vc*.8));br.position.set(s*.1,-.02,0);g.add(br);});
+  var pot=new THREE.Mesh(new THREE.CylinderGeometry(.018,.014,.04,8),new THREE.MeshStandardMaterial({color:0x7a5c3a,roughness:.9}));pot.position.set(.06,.04,0);g.add(pot);
+  return g;
+}
+function mkWallClock(){
+  var g=new THREE.Group(),vc=getVC('#C4956A');
+  var frame=new THREE.Mesh(new THREE.TorusGeometry(.1,.022,12,40),ratMat(vc));frame.rotation.x=Math.PI/2;g.add(frame);
+  var face=new THREE.Mesh(new THREE.CircleGeometry(.078,32),new THREE.MeshStandardMaterial({color:0xfaf6f0,roughness:.8}));face.rotation.x=-Math.PI/2;face.position.y=.005;g.add(face);
+  var hHand=new THREE.Mesh(new THREE.BoxGeometry(.004,.045,.003),new THREE.MeshStandardMaterial({color:0x2a2a2a}));hHand.position.set(0,.009,0);hHand.rotation.z=.5;g.add(hHand);
+  var mHand=new THREE.Mesh(new THREE.BoxGeometry(.003,.065,.003),new THREE.MeshStandardMaterial({color:0x1a1a1a}));mHand.position.set(0,.009,0);mHand.rotation.z=-.8;g.add(mHand);
+  var dot=new THREE.Mesh(new THREE.SphereGeometry(.007,8,8),new THREE.MeshStandardMaterial({color:0xC4956A,metalness:.3}));dot.position.y=.01;g.add(dot);
+  return g;
+}
+function mkWallMirror(){
+  var g=new THREE.Group(),vc=getVC('#C4956A');
+  var frame=new THREE.Mesh(new THREE.TorusGeometry(.12,.025,12,40),ratMat(vc));frame.rotation.x=Math.PI/2;frame.scale.set(1,1.4,1);g.add(frame);
+  var mirror=new THREE.Mesh(new THREE.CircleGeometry(.094,32),new THREE.MeshStandardMaterial({color:0xc8e8f0,metalness:.85,roughness:.05,transparent:true,opacity:.7}));mirror.rotation.x=-Math.PI/2;mirror.scale.set(1,1.4,1);mirror.position.y=.005;g.add(mirror);
+  var cord=new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.06,4),ratMat(0x5a3d1a));cord.position.set(0,.175,0);g.add(cord);
+  return g;
+}
+function mkPendantLamp(){
+  var g=new THREE.Group(),vc=getVC('#C4956A');
+  var cord=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.18,6),ratMat(0x3a2a1a));cord.position.y=-.09;g.add(cord);
+  var shade=new THREE.Mesh(new THREE.SphereGeometry(.14,16,8,0,Math.PI*2,0,Math.PI*.6),ratMat(vc));shade.rotation.x=Math.PI;shade.position.y=-.22;g.add(shade);
+  var bulb=new THREE.Mesh(new THREE.SphereGeometry(.04,12,12),new THREE.MeshStandardMaterial({color:0xfff5cc,emissive:0xffd97a,emissiveIntensity:.8,roughness:.5}));bulb.position.y=-.2;g.add(bulb);
+  var ring=new THREE.Mesh(new THREE.TorusGeometry(.1,.01,6,24),ratMat(vc*.8));ring.rotation.x=Math.PI/2;ring.position.y=-.31;g.add(ring);
+  return g;
+}
+function mkHangingPlant(){
+  var g=new THREE.Group(),vc=getVC('#C4956A');
+  for(var i=0;i<3;i++){var a=(i/3)*Math.PI*2;var cord=new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.15,4),ratMat(0x5a3d1a));cord.position.set(Math.cos(a)*.055,-.075,Math.sin(a)*.055);g.add(cord);}
+  var basket=new THREE.Mesh(new THREE.SphereGeometry(.09,12,8,0,Math.PI*2,0,Math.PI*.65),ratMat(vc));basket.rotation.x=Math.PI;basket.position.y=-.2;g.add(basket);
+  var plant=new THREE.Mesh(new THREE.SphereGeometry(.1,10,8),new THREE.MeshStandardMaterial({color:0x3a7a2a,roughness:.95}));plant.scale.set(1,.7,1);plant.position.y=-.12;g.add(plant);
+  var soil=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.02,12),new THREE.MeshStandardMaterial({color:0x3d2b1a,roughness:1}));soil.position.y=-.17;g.add(soil);
   return g;
 }
 
-// ARMCHAIR — single rattan chair
-function mkArmchair() {
-  var g = new THREE.Group();
-  var vc = getVC('#C4956A');
-  var base = new THREE.Mesh(new THREE.BoxGeometry(.28,.1,.26), ratMat(vc));
-  base.position.y = .18; g.add(base);
-  var seat = new THREE.Mesh(new THREE.BoxGeometry(.25,.07,.22), cushMat(0x9B7B5B));
-  seat.position.y = .245; g.add(seat);
-  var back = new THREE.Mesh(new THREE.BoxGeometry(.28,.28,.05), ratMat(vc));
-  back.position.set(0,.33,-.105); g.add(back);
-  var bcush = new THREE.Mesh(new THREE.BoxGeometry(.24,.24,.04), cushMat(0x9B7B5B));
-  bcush.position.set(0,.33,-.082); g.add(bcush);
-  [-1,1].forEach(function(s){
-    var arm = new THREE.Mesh(new THREE.BoxGeometry(.04,.12,.26), ratMat(vc));
-    arm.position.set(s*.15,.22,0); g.add(arm);
-  });
-  // Curved legs (approximated)
-  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(p){
-    var leg = new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,.18,6), ratMat(vc));
-    leg.position.set(p[0]*.12,.09,p[1]*.1); g.add(leg);
-  });
-  return g;
-}
-
-// COFFEE TABLE — low rattan table
-function mkCoffeeTable() {
-  var g = new THREE.Group();
-  var vc = getVC('#C4956A');
-  // Top
-  var top = new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.025,32), ratMat(vc));
-  top.position.y = .155; g.add(top);
-  // Glass top effect
-  var glass = new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.01,32),
-    new THREE.MeshStandardMaterial({color:0xaaddff,transparent:true,opacity:.25,roughness:.05,metalness:.1}));
-  glass.position.y = .175; g.add(glass);
-  // Rattan base/weave cylinder
-  var barrel = new THREE.Mesh(new THREE.CylinderGeometry(.14,.16,.12,12,1,true), ratMat(vc));
-  barrel.position.y = .06; g.add(barrel);
-  // Bottom ring
-  var bot = new THREE.Mesh(new THREE.TorusGeometry(.14,.015,8,24), ratMat(vc*.9));
-  bot.rotation.x = Math.PI/2; bot.position.y = .015; g.add(bot);
-  return g;
-}
-
-// FLOOR SHELF — tall rattan bookshelf
-function mkFloorShelf() {
-  var g = new THREE.Group();
-  var vc = getVC('#C4956A');
-  // Sides
-  [-1,1].forEach(function(s){
-    var side = new THREE.Mesh(new THREE.BoxGeometry(.025,.5,.18), ratMat(vc));
-    side.position.set(s*.14,.25,0); g.add(side);
-  });
-  // Shelves (4)
-  [0,.12,.28,.44,.5].forEach(function(y){
-    var shelf = new THREE.Mesh(new THREE.BoxGeometry(.28,.015,.18), ratMat(vc*.9));
-    shelf.position.y = y; g.add(shelf);
-  });
-  // Back panel weave
-  var back = new THREE.Mesh(new THREE.BoxGeometry(.28,.5,.012), ratMat(vc*.85));
-  back.position.set(0,.25,-.085); g.add(back);
-  return g;
-}
-
-// STOOL — small rattan stool
-function mkStool() {
-  var g = new THREE.Group();
-  var vc = getVC('#C4956A');
-  var top = new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,.06,16), ratMat(vc));
-  top.position.y = .15; g.add(top);
-  var cush = new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.04,16), cushMat(0x9B7B5B));
-  cush.position.y = .2; g.add(cush);
-  // 3 legs
-  for(var i=0;i<3;i++){
-    var a = (i/3)*Math.PI*2;
-    var leg = new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.14,6), ratMat(vc));
-    leg.position.set(Math.cos(a)*.07,.07,Math.sin(a)*.07);
-    leg.rotation.z = Math.sin(a)*.15; leg.rotation.x = -Math.cos(a)*.15;
-    g.add(leg);
-  }
-  return g;
-}
-
-// WALL SHELF — floating wall-mounted rattan shelf
-function mkWallShelf() {
-  var g = new THREE.Group();
-  var vc = getVC('#C4956A');
-  // Shelf board
-  var board = new THREE.Mesh(new THREE.BoxGeometry(.24,.025,.12), ratMat(vc));
-  board.position.y = .012; g.add(board);
-  // Rattan back panel
-  var back = new THREE.Mesh(new THREE.BoxGeometry(.24,.1,.015), ratMat(vc*.85));
-  back.position.set(0,.06,-.055); g.add(back);
-  // Brackets
-  [-1,1].forEach(function(s){
-    var br = new THREE.Mesh(new THREE.BoxGeometry(.012,.06,.1), ratMat(vc*.8));
-    br.position.set(s*.1,-.02,0); g.add(br);
-  });
-  // Small decorative items on shelf
-  var pot = new THREE.Mesh(new THREE.CylinderGeometry(.018,.014,.04,8), new THREE.MeshStandardMaterial({color:0x7a5c3a,roughness:.9}));
-  pot.position.set(.06,.04,0); g.add(pot);
-  return g;
-}
-
-// WALL CLOCK — rattan-framed wall clock
-function mkWallClock() {
-  var g = new THREE.Group();
-  var vc = getVC('#C4956A');
-  // Outer rattan frame ring
-  var frame = new THREE.Mesh(new THREE.TorusGeometry(.1,.022,12,40), ratMat(vc));
-  frame.rotation.x = Math.PI/2; g.add(frame);
-  // Inner face
-  var face = new THREE.Mesh(new THREE.CircleGeometry(.078,32),
-    new THREE.MeshStandardMaterial({color:0xfaf6f0,roughness:.8}));
-  face.rotation.x = -Math.PI/2; face.position.y = .005; g.add(face);
-  // Clock hands
-  var hHand = new THREE.Mesh(new THREE.BoxGeometry(.004,.045,.003),
-    new THREE.MeshStandardMaterial({color:0x2a2a2a}));
-  hHand.position.set(0,.009,0); hHand.rotation.z = .5; g.add(hHand);
-  var mHand = new THREE.Mesh(new THREE.BoxGeometry(.003,.065,.003),
-    new THREE.MeshStandardMaterial({color:0x1a1a1a}));
-  mHand.position.set(0,.009,0); mHand.rotation.z = -.8; g.add(mHand);
-  // Center dot
-  var dot = new THREE.Mesh(new THREE.SphereGeometry(.007,8,8),
-    new THREE.MeshStandardMaterial({color:0xC4956A,metalness:.3}));
-  dot.position.y = .01; g.add(dot);
-  return g;
-}
-
-// WALL MIRROR — rattan-framed oval mirror
-function mkWallMirror() {
-  var g = new THREE.Group();
-  var vc = getVC('#C4956A');
-  // Oval frame (approximated with torus + scale)
-  var frame = new THREE.Mesh(new THREE.TorusGeometry(.12,.025,12,40), ratMat(vc));
-  frame.rotation.x = Math.PI/2;
-  frame.scale.set(1,1.4,1);
-  g.add(frame);
-  // Mirror surface
-  var mirror = new THREE.Mesh(new THREE.EllipseCurve ? new THREE.CircleGeometry(.094,32) : new THREE.CircleGeometry(.094,32),
-    new THREE.MeshStandardMaterial({color:0xc8e8f0,metalness:.85,roughness:.05,transparent:true,opacity:.7}));
-  mirror.rotation.x = -Math.PI/2;
-  mirror.scale.set(1,1.4,1);
-  mirror.position.y = .005;
-  g.add(mirror);
-  // Hanging cord detail
-  var cord = new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.06,4), ratMat(0x5a3d1a));
-  cord.position.set(0,.175,.0); g.add(cord);
-  return g;
-}
-
-// PENDANT LAMP — rattan ceiling pendant light
-function mkPendantLamp() {
-  var g = new THREE.Group();
-  var vc = getVC('#C4956A');
-  // Cord/wire from ceiling
-  var cord = new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.18,6), ratMat(0x3a2a1a));
-  cord.position.y = -.09; g.add(cord);
-  // Rattan shade (inverted dome shape)
-  var shade = new THREE.Mesh(new THREE.SphereGeometry(.14,16,8,0,Math.PI*2,0,Math.PI*.6), ratMat(vc));
-  shade.rotation.x = Math.PI; shade.position.y = -.22; g.add(shade);
-  // Inner glow
-  var bulb = new THREE.Mesh(new THREE.SphereGeometry(.04,12,12),
-    new THREE.MeshStandardMaterial({color:0xfff5cc,emissive:0xffd97a,emissiveIntensity:.8,roughness:.5}));
-  bulb.position.y = -.2; g.add(bulb);
-  // Bottom ring
-  var ring = new THREE.Mesh(new THREE.TorusGeometry(.1,.01,6,24), ratMat(vc*.8));
-  ring.rotation.x = Math.PI/2; ring.position.y = -.31; g.add(ring);
-  return g;
-}
-
-// HANGING PLANTER — rattan hanging plant basket
-function mkHangingPlant() {
-  var g = new THREE.Group();
-  var vc = getVC('#C4956A');
-  // Cords
-  for(var i=0;i<3;i++){
-    var a=(i/3)*Math.PI*2;
-    var cord = new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.15,4), ratMat(0x5a3d1a));
-    cord.position.set(Math.cos(a)*.055,-.075,Math.sin(a)*.055); g.add(cord);
-  }
-  // Basket
-  var basket = new THREE.Mesh(new THREE.SphereGeometry(.09,12,8,0,Math.PI*2,0,Math.PI*.65), ratMat(vc));
-  basket.rotation.x = Math.PI; basket.position.y = -.2; g.add(basket);
-  // Plant greenery
-  var plant = new THREE.Mesh(new THREE.SphereGeometry(.1,10,8),
-    new THREE.MeshStandardMaterial({color:0x3a7a2a,roughness:.95}));
-  plant.scale.set(1,.7,1); plant.position.y = -.12; g.add(plant);
-  // Soil
-  var soil = new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.02,12),
-    new THREE.MeshStandardMaterial({color:0x3d2b1a,roughness:1}));
-  soil.position.y = -.17; g.add(soil);
-  return g;
-}
-
-// ── HIGHLIGHT ───────────────────────────────────────────────────────────────
-function setHighlight(obj, on) {
-  obj.traverse(function(c) {
-    if(!c.isMesh) return;
-    if(on) {
-      if(!c.userData._oe) { c.userData._oe = c.material.emissive ? c.material.emissive.clone() : new THREE.Color(0,0,0); c.userData._oi = c.material.emissiveIntensity||0; }
-      c.material = c.material.clone(); c.material.emissive = new THREE.Color(0x00c896); c.material.emissiveIntensity = .35;
-    } else {
-      if(c.userData._oe) { c.material = c.material.clone(); c.material.emissive = c.userData._oe; c.material.emissiveIntensity = c.userData._oi; }
+// ── HIGHLIGHT ────────────────────────────────────────────────
+function setHL(obj,on){
+  obj.traverse(function(c){
+    if(!c.isMesh)return;
+    if(on){
+      if(!c.userData._oe){c.userData._oe=c.material.emissive?c.material.emissive.clone():new THREE.Color(0,0,0);c.userData._oi=c.material.emissiveIntensity||0;}
+      c.material=c.material.clone();c.material.emissive=new THREE.Color(0x2D6A4F);c.material.emissiveIntensity=.3;
+    }else{
+      if(c.userData._oe){c.material=c.material.clone();c.material.emissive=c.userData._oe;c.material.emissiveIntensity=c.userData._oi;}
     }
   });
 }
 
-// ── STATE ───────────────────────────────────────────────────────────────────
-var scene, camera, renderer;
-var reticleFloor, reticleWall, reticleCeiling;
-var selId = CATALOG[0].id;
-var placed = [];       // {obj, def, surface}
-var userScale = 1.0;
-var surfaceFound = false;
-var mode = 'place';
-var grabbedObj = null;
-var lastPlaced = null; // most recently placed — for product panel
+// ── PRICE LABEL (sprite) ─────────────────────────────────────
+function makePriceLabel(name,price){
+  var canvas=document.createElement('canvas');
+  canvas.width=256;canvas.height=80;
+  var ctx=canvas.getContext('2d');
+  ctx.fillStyle='rgba(255,255,255,0.92)';
+  ctx.roundRect(4,4,248,72,14);ctx.fill();
+  ctx.fillStyle='#2D6A4F';ctx.font='bold 22px Inter,Arial';ctx.textAlign='center';
+  ctx.fillText(name,128,32);
+  ctx.fillStyle='#111827';ctx.font='bold 26px Inter,Arial';
+  ctx.fillText('₱'+price.toLocaleString(),128,64);
+  var tex=new THREE.CanvasTexture(canvas);
+  var mat=new THREE.SpriteMaterial({map:tex,depthTest:false,transparent:true});
+  var sprite=new THREE.Sprite(mat);
+  sprite.scale.set(.32,.1,1);
+  return sprite;
+}
 
-var xrSession = null, xrRefSpace = null;
-var hitSrcCenter = null, hitSrcDown = null, hitSrcUp = null;
-var lastHitPos = null, lastSurfaceType = 'floor', lastHitMatrix4 = null;
+// ── STATE ────────────────────────────────────────────────────
+var scene,camera,renderer;
+var reticleFloor,reticleWall,reticleCeiling;
+var selId=null; // null = nothing selected
+var placed=[];  // {obj, def, label, baseY, surfType, userRot}
+var mode='place';
+var grabbedEntry=null;
+var lastEntry=null;
+var userScale=1.0;
+var surfaceFound=false;
+var lastSurfType='floor';
+var lastHitPos=null;
+var lastHitMat4=null;
 
-// Cart & wishlist (in-memory — connect to your backend)
-var cart = [];
-var wishlist = [];
+var xrSession=null,xrRefSpace=null;
+var hitSrcCenter=null,hitSrcDown=null,hitSrcUp=null;
 
-// Swipe rotation tracking
-var touchStartX = null;
-var swipeTarget = null;
+// Cart
+var cart=[]; // {def}
+// Wishlist
+var wishSet={};
+
+// Touch rotation
+var touchStartX=0,touchRotating=false;
 
 // Preview
-var prevObjs=[], prevActive=false, prevRAF=null;
+var prevObjs=[],prevActive=false,prevRAF=null;
 
-// ── SCENE ───────────────────────────────────────────────────────────────────
-function initScene() {
-  scene  = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, .005, 50);
-  renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, preserveDrawingBuffer:true});
+// ── SCENE ────────────────────────────────────────────────────
+function initScene(){
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.005,50);
+  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-  renderer.setSize(innerWidth, innerHeight);
-  renderer.xr.enabled = true;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.domElement.style.cssText = 'position:fixed;inset:0;z-index:1;';
-  document.body.insertBefore(renderer.domElement, document.getElementById('hud'));
+  renderer.setSize(innerWidth,innerHeight);
+  renderer.xr.enabled=true;
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.domElement.style.cssText='position:fixed;inset:0;z-index:1;';
+  document.body.insertBefore(renderer.domElement,document.getElementById('hud'));
 
-  scene.add(new THREE.AmbientLight(0xffffff, .8));
-  var sun = new THREE.DirectionalLight(0xffffff, 1.1); sun.position.set(2,4,2); sun.castShadow=true; scene.add(sun);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x443322, .35));
+  scene.add(new THREE.AmbientLight(0xffffff,.8));
+  var sun=new THREE.DirectionalLight(0xffffff,1.1);sun.position.set(2,4,2);sun.castShadow=true;scene.add(sun);
+  scene.add(new THREE.HemisphereLight(0xffffff,0x888888,.4));
 
   buildReticles();
+  window.addEventListener('resize',function(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 
-  // Swipe to rotate placed objects
-  renderer.domElement.addEventListener('touchstart', function(e) {
-    touchStartX = e.touches[0].clientX;
-    // find nearest object to rotate
-    swipeTarget = lastPlaced ? lastPlaced.obj : null;
-  }, {passive:true});
-  renderer.domElement.addEventListener('touchmove', function(e) {
-    if(touchStartX === null || !swipeTarget) return;
-    var dx = e.touches[0].clientX - touchStartX;
-    swipeTarget.rotation.y += dx * .012;
-    swipeTarget.userData.rot = swipeTarget.rotation.y;
-    touchStartX = e.touches[0].clientX;
-  }, {passive:true});
-  renderer.domElement.addEventListener('touchend', function() { touchStartX=null; }, {passive:true});
-
-  window.addEventListener('resize', function() {
-    camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight);
-  });
+  // Touch for rotation in move mode
+  renderer.domElement.addEventListener('touchstart',onTouchStart,{passive:true});
+  renderer.domElement.addEventListener('touchmove',onTouchMove,{passive:true});
+  renderer.domElement.addEventListener('touchend',onTouchEnd,{passive:true});
 }
 
-function makeReticle(color) {
-  var g = new THREE.Group(); g.matrixAutoUpdate=false; g.visible=false;
-  g.add(new THREE.Mesh(new THREE.RingGeometry(.07,.085,40).rotateX(-Math.PI/2),
-    new THREE.MeshBasicMaterial({color:color,side:THREE.DoubleSide,depthWrite:false})));
-  g.add(new THREE.Mesh(new THREE.CircleGeometry(.01,20).rotateX(-Math.PI/2),
-    new THREE.MeshBasicMaterial({color:color,side:THREE.DoubleSide,depthWrite:false})));
-  var blob=new THREE.Mesh(new THREE.CircleGeometry(.09,32).rotateX(-Math.PI/2),
-    new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.17,side:THREE.DoubleSide,depthWrite:false}));
-  blob.position.y=-.001; g.add(blob);
-  scene.add(g); return g;
+function makeReticle(color){
+  var g=new THREE.Group();g.matrixAutoUpdate=false;g.visible=false;
+  g.add(new THREE.Mesh(new THREE.RingGeometry(.07,.085,40).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:color,side:THREE.DoubleSide,depthWrite:false})));
+  g.add(new THREE.Mesh(new THREE.CircleGeometry(.01,20).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:color,side:THREE.DoubleSide,depthWrite:false})));
+  var blob=new THREE.Mesh(new THREE.CircleGeometry(.09,32).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.16,side:THREE.DoubleSide,depthWrite:false}));blob.position.y=-.001;g.add(blob);
+  scene.add(g);return g;
 }
-function buildReticles() {
-  reticleFloor   = makeReticle(0x00C896);
-  reticleWall    = makeReticle(0xFF8C00);
-  reticleCeiling = makeReticle(0x4488FF);
+function buildReticles(){
+  reticleFloor  =makeReticle(0x52B788);
+  reticleWall   =makeReticle(0xF59E0B);
+  reticleCeiling=makeReticle(0x60A5FA);
 }
-function hideAllReticles() { reticleFloor.visible=false; reticleWall.visible=false; reticleCeiling.visible=false; }
+function hideReticles(){reticleFloor.visible=false;reticleWall.visible=false;reticleCeiling.visible=false;}
 
-// ── PREVIEW ─────────────────────────────────────────────────────────────────
-function startPreview() {
+// ── PREVIEW ──────────────────────────────────────────────────
+function startPreview(){
   prevActive=true;
-  activeVariantColor=null;
-  CATALOG.forEach(function(m,i) {
-    var obj=m.fn(); var a=(i/CATALOG.length)*Math.PI*2;
-    obj.position.set(Math.cos(a)*1.6,-.4,Math.sin(a)*1.6-5); obj.scale.setScalar(.7);
-    scene.add(obj); prevObjs.push(obj);
-  });
-  camera.position.set(0,0,0); camera.lookAt(0,-.4,-5);
+  CATALOG.forEach(function(m,i){var obj=m.fn();var a=(i/CATALOG.length)*Math.PI*2;obj.position.set(Math.cos(a)*1.4,-.45,Math.sin(a)*1.4-4.5);obj.scale.setScalar(.7);scene.add(obj);prevObjs.push(obj);});
+  camera.position.set(0,0,0);camera.lookAt(0,-.45,-4.5);
   var t=0;
-  function loop() {
-    if(!prevActive) return; prevRAF=requestAnimationFrame(loop); t+=.005;
-    prevObjs.forEach(function(o,i){ o.rotation.y+=.008; o.position.y=-.4+Math.sin(t+i*.8)*.07; });
-    renderer.render(scene,camera);
-  }
+  function loop(){if(!prevActive)return;prevRAF=requestAnimationFrame(loop);t+=.004;prevObjs.forEach(function(o,i){o.rotation.y+=.008;o.position.y=-.45+Math.sin(t+i*.7)*.07;});renderer.render(scene,camera);}
   loop();
 }
-function stopPreview() {
-  prevActive=false; if(prevRAF){cancelAnimationFrame(prevRAF);prevRAF=null;}
-  prevObjs.forEach(function(o){scene.remove(o);}); prevObjs=[];
-}
+function stopPreview(){prevActive=false;if(prevRAF){cancelAnimationFrame(prevRAF);prevRAF=null;}prevObjs.forEach(function(o){scene.remove(o);});prevObjs=[];}
 
-// ── AR SESSION ───────────────────────────────────────────────────────────────
-function enterAR() {
+// ── AR SESSION ───────────────────────────────────────────────
+function enterAR(){
   if(!navigator.xr){toast('WebXR not supported');return;}
   navigator.xr.requestSession('immersive-ar',{
     requiredFeatures:['hit-test'],
     optionalFeatures:['dom-overlay'],
     domOverlay:{root:document.getElementById('hud')}
-  }).then(function(session) {
+  }).then(function(session){
     xrSession=session;
     renderer.xr.setReferenceSpaceType('local');
-    renderer.xr.setSession(session).then(function() {
-      session.requestReferenceSpace('local').then(function(ls) {
+    renderer.xr.setSession(session).then(function(){
+      session.requestReferenceSpace('local').then(function(ls){
         xrRefSpace=ls;
-        session.requestReferenceSpace('viewer').then(function(vs) {
-          var ready=0; function tryStart(){ready++;if(ready===3)onReady();}
-          try {
-            session.requestHitTestSource({space:vs,offsetRay:new XRRay({x:0,y:0,z:0,w:1},{x:0,y:0,z:-1,w:0})})
-              .then(function(s){hitSrcCenter=s;tryStart();}).catch(function(){tryStart();});
-            session.requestHitTestSource({space:vs,offsetRay:new XRRay({x:0,y:0,z:0,w:1},{x:0,y:-.766,z:-.643,w:0})})
-              .then(function(s){hitSrcDown=s;tryStart();}).catch(function(){tryStart();});
-            session.requestHitTestSource({space:vs,offsetRay:new XRRay({x:0,y:0,z:0,w:1},{x:0,y:.766,z:-.643,w:0})})
-              .then(function(s){hitSrcUp=s;tryStart();}).catch(function(){tryStart();});
-          } catch(e) {
-            console.warn('[AR] XRRay offset not supported, fallback');
-            session.requestHitTestSource({space:vs}).then(function(s){hitSrcCenter=s;hitSrcDown=null;hitSrcUp=null;onReady();}).catch(function(e2){toast('Hit-test failed: '+e2.message);session.end();});
+        session.requestReferenceSpace('viewer').then(function(vs){
+          var ready=0;
+          function tryReady(){ready++;if(ready===3)onARReady(session);}
+          try{
+            session.requestHitTestSource({space:vs,offsetRay:new XRRay({x:0,y:0,z:0,w:1},{x:0,y:0,z:-1,w:0})}).then(function(s){hitSrcCenter=s;tryReady();}).catch(tryReady);
+            session.requestHitTestSource({space:vs,offsetRay:new XRRay({x:0,y:0,z:0,w:1},{x:0,y:-.766,z:-.643,w:0})}).then(function(s){hitSrcDown=s;tryReady();}).catch(tryReady);
+            session.requestHitTestSource({space:vs,offsetRay:new XRRay({x:0,y:0,z:0,w:1},{x:0,y:.766,z:-.643,w:0})}).then(function(s){hitSrcUp=s;tryReady();}).catch(tryReady);
+          }catch(e){
+            session.requestHitTestSource({space:vs}).then(function(s){hitSrcCenter=s;hitSrcDown=null;hitSrcUp=null;onARReady(session);}).catch(function(e2){toast('Hit-test error: '+e2.message);session.end();});
           }
-          function onReady() {
-            session.addEventListener('end', onSessionEnd);
-            session.addEventListener('select', onTap);
-            stopPreview();
-            document.getElementById('enter-ar').classList.add('gone');
-            document.getElementById('mode-pill').classList.add('show');
-            setBadge('● ACTIVE'); setStatus('POINT AT FLOOR · WALL · CEILING');
-            showScan(true);showTap(false);showMoveHint(false);showGrabbed(false);hidePanel();
-            lastHitPos=null;surfaceFound=false; setModeUI('place');
-            renderer.setAnimationLoop(arLoop);
-          }
-        }).catch(function(e){toast('Viewer space: '+e.message);session.end();});
-      }).catch(function(e){toast('Local space: '+e.message);session.end();});
-    }).catch(function(e){toast('Session: '+e.message);});
-  }).catch(function(e){toast('AR Error: '+e.message);});
+        });
+      });
+    });
+  }).catch(function(e){toast('Could not start AR: '+e.message);});
 }
 
-function onSessionEnd() {
+function onARReady(session){
+  session.addEventListener('end',onSessionEnd);
+  session.addEventListener('select',onTap);
+  stopPreview();
+  document.getElementById('ar-btn').classList.add('gone');
+  document.getElementById('mode-bar').classList.add('show');
+  setStatus('Point your camera at a surface');
+  showScan(true);showTapHint(false);showGrabHint(false);
+  setModeUI('place');
+  renderer.setAnimationLoop(arLoop);
+}
+
+function onSessionEnd(){
   renderer.setAnimationLoop(null);
-  if(grabbedObj){setHighlight(grabbedObj,false);grabbedObj=null;}
-  hitSrcCenter=hitSrcDown=hitSrcUp=null; xrRefSpace=null; xrSession=null;
-  lastHitPos=null; surfaceFound=false; lastPlaced=null;
-  hideAllReticles(); hidePanel();
-  document.getElementById('enter-ar').classList.remove('gone');
-  document.getElementById('mode-pill').classList.remove('show');
-  setBadge('● READY'); setStatus('SELECT FURNITURE · TAP ENTER AR');
-  showScan(false);showTap(false);showMoveHint(false);showGrabbed(false);
-  setSurfType('');
+  if(grabbedEntry){setHL(grabbedEntry.obj,false);grabbedEntry=null;}
+  hitSrcCenter=hitSrcDown=hitSrcUp=null;xrRefSpace=null;xrSession=null;
+  lastHitPos=null;surfaceFound=false;
+  hideReticles();
+  document.getElementById('ar-btn').classList.remove('gone');
+  document.getElementById('mode-bar').classList.remove('show');
+  setSurfPill('');
+  hidePanel();
+  setStatus('');
+  showScan(false);showTapHint(false);showGrabHint(false);
   startPreview();
 }
 
-// ── CLASSIFY SURFACE ─────────────────────────────────────────────────────────
-function classifySurface(m) {
-  var ny=m[5];
-  if(ny>0.35)  return 'floor';
-  if(ny<-0.35) return 'ceiling';
-  return 'wall';
-}
+// ── SURFACE CLASSIFY ─────────────────────────────────────────
+function classify(m){var ny=m[5];if(ny>0.35)return 'floor';if(ny<-0.35)return 'ceiling';return 'wall';}
 
-// ── AR LOOP ──────────────────────────────────────────────────────────────────
-function arLoop(ts, frame) {
+// ── AR LOOP ──────────────────────────────────────────────────
+function arLoop(ts,frame){
   if(!frame){renderer.render(scene,camera);return;}
+  var camDir=new THREE.Vector3();camera.getWorldDirection(camDir);
+  var camPos=new THREE.Vector3();camera.getWorldPosition(camPos);
+  var bestPos=null,bestMat=null,bestType=null,bestScore=-999;
 
-  var camDir=new THREE.Vector3(); camera.getWorldDirection(camDir);
-  var bestPos=null, bestMatrix=null, bestType=null, bestScore=-Infinity;
-
-  function evalSrc(src) {
-    if(!src||!xrRefSpace) return;
-    var hits=frame.getHitTestResults(src); if(!hits.length) return;
-    var pose=hits[0].getPose(xrRefSpace); if(!pose) return;
+  function evalSrc(src){
+    if(!src||!xrRefSpace)return;
+    var hits=frame.getHitTestResults(src);
+    if(!hits.length)return;
+    var pose=hits[0].getPose(xrRefSpace);if(!pose)return;
     var m=pose.transform.matrix;
-    var type=classifySurface(m);
+    var type=classify(m);
     var pos=new THREE.Vector3(m[12],m[13],m[14]);
-    var camPos=new THREE.Vector3(); camera.getWorldPosition(camPos);
     var toHit=new THREE.Vector3().subVectors(pos,camPos).normalize();
-    var align=toHit.dot(camDir);
-    var bonus=0;
-    if(camDir.y>0.3  && type==='ceiling') bonus=.5;
-    if(camDir.y<-0.3 && type==='floor')   bonus=.5;
-    if(Math.abs(camDir.y)<0.3 && type==='wall') bonus=.3;
-    var score=align+bonus;
-    if(score>bestScore){bestScore=score;bestPos=pos;bestMatrix=m;bestType=type;}
+    var score=toHit.dot(camDir);
+    if(camDir.y>0.3&&type==='ceiling')score+=.5;
+    else if(camDir.y<-0.3&&type==='floor')score+=.5;
+    else if(Math.abs(camDir.y)<0.3&&type==='wall')score+=.3;
+    if(score>bestScore){bestScore=score;bestPos=pos;bestMat=m;bestType=type;}
   }
-  evalSrc(hitSrcCenter); evalSrc(hitSrcDown); evalSrc(hitSrcUp);
+  evalSrc(hitSrcCenter);evalSrc(hitSrcDown);evalSrc(hitSrcUp);
 
-  if(bestPos && bestType) {
-    lastHitPos=bestPos; lastSurfaceType=bestType;
-    lastHitMatrix4=new THREE.Matrix4().fromArray(bestMatrix);
-    hideAllReticles();
-    var ar = bestType==='floor'?reticleFloor : bestType==='wall'?reticleWall : reticleCeiling;
-    if(mode==='place'||(mode==='move'&&grabbedObj)){ar.visible=true;ar.matrix.fromArray(bestMatrix);}
-    if(mode==='move'&&grabbedObj){grabbedObj.position.copy(bestPos);grabbedObj.userData.baseY=bestPos.y;}
-    setSurfType(bestType);
-    if(!surfaceFound){
-      surfaceFound=true; showScan(false);
-      if(mode==='place'){showTap(true);}
-      else if(!grabbedObj){showMoveHint(true);}
-      updateStatusForSurf(bestType);
-    } else { updateStatusForSurf(bestType); }
-  } else {
-    hideAllReticles(); lastHitPos=null;
-    if(surfaceFound){
-      surfaceFound=false; showTap(false); showMoveHint(false);
-      if(!grabbedObj){showScan(true);setStatus('POINT AT FLOOR · WALL · CEILING');}
-      setSurfType('');
+  if(bestPos&&bestType){
+    lastHitPos=bestPos;lastSurfType=bestType;lastHitMat4=new THREE.Matrix4().fromArray(bestMat);
+    var activeR=bestType==='floor'?reticleFloor:bestType==='wall'?reticleWall:reticleCeiling;
+    hideReticles();
+    if(mode==='place'||(mode==='move'&&grabbedEntry)){activeR.visible=true;activeR.matrix.fromArray(bestMat);}
+    setSurfPill(bestType);
+    if(mode==='move'&&grabbedEntry){
+      grabbedEntry.obj.position.copy(bestPos);
+      grabbedEntry.baseY=bestPos.y;
+      if(grabbedEntry.label){grabbedEntry.label.position.set(bestPos.x,bestPos.y+.35,bestPos.z);}
     }
+    if(!surfaceFound){
+      surfaceFound=true;showScan(false);
+      if(mode==='place'){showTapHint(true);setStatus('Tap to place '+surfLabel(bestType));}
+      else if(!grabbedEntry){showGrabHint(true);setStatus('Tap an object to grab it');}
+    }else{
+      if(mode==='place'&&surfaceFound)setStatus('Tap to place '+surfLabel(bestType));
+    }
+  }else{
+    hideReticles();lastHitPos=null;
+    if(surfaceFound){surfaceFound=false;showTapHint(false);showGrabHint(false);showScan(true);setStatus('Point your camera at a surface');}
   }
 
+  // Gentle idle animation for non-grabbed floor objects
   var t=ts*.001;
-  placed.forEach(function(item,i) {
-    if(item.obj===grabbedObj) return;
-    item.obj.userData.rot=(item.obj.userData.rot||0)+.004;
-    if(item.surface==='floor' && item.obj.userData.baseY!==undefined)
-      item.obj.position.y=item.obj.userData.baseY+Math.sin(t*1.2+i*.9)*.008;
+  placed.forEach(function(e,i){
+    if(e===grabbedEntry)return;
+    if(e.surfType==='floor')e.obj.position.y=e.baseY+Math.sin(t*1.1+i*.8)*.008;
   });
 
   renderer.render(scene,camera);
 }
 
-function updateStatusForSurf(type) {
-  if(mode==='place') setStatus({floor:'FLOOR DETECTED · TAP TO PLACE',wall:'WALL DETECTED · TAP TO PLACE',ceiling:'CEILING DETECTED · TAP TO PLACE'}[type]||'');
-  else if(!grabbedObj) setStatus('POINT AT FURNITURE · TAP TO GRAB');
-}
-
-// ── TAP ──────────────────────────────────────────────────────────────────────
-function onTap() {
+// ── TAP ──────────────────────────────────────────────────────
+function onTap(){
   if(mode==='place') doPlace();
-  else doMoveAction();
+  else doGrab();
 }
 
-function doPlace() {
+function doPlace(){
+  if(!selId){toast('Select a furniture item first');return;}
   if(!lastHitPos){toast('No surface detected — keep scanning');return;}
-  var def = CATALOG.find(function(m){return m.id===selId;});
+  var def=CATALOG.find(function(m){return m.id===selId;});
+  if(!def)return;
 
-  // Apply current variant color before building
-  var selCard = document.querySelector('.card.sel');
-  activeVariantColor = selCard ? selCard.dataset.variantColor || null : null;
+  // Set variant color before building
+  activeVC=def.variants[def._selVariant||0]||null;
+  var obj=def.fn();
+  activeVC=null;
 
-  var obj = def.fn();
+  // Position
   obj.position.copy(lastHitPos);
-  obj.userData.baseY = lastHitPos.y;
-  obj.userData.rot = 0;
-  obj.userData.defId = def.id;
+  obj.userData.baseY=lastHitPos.y;
 
   // Orient to surface
-  if(lastHitMatrix4 && (lastSurfaceType==='wall'||lastSurfaceType==='ceiling')) {
-    var me=lastHitMatrix4.elements;
-    var nx=me[4],ny=me[5],nz=me[6];
-    if(lastSurfaceType==='wall') {
-      var sn=new THREE.Vector3(nx,ny,nz).normalize();
-      obj.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),sn);
-    } else {
-      obj.rotation.set(Math.PI,0,0);
-    }
-  } else {
-    obj.rotation.set(0,0,0);
+  obj.rotation.set(0,0,0);
+  if(lastSurfType==='wall'&&lastHitMat4){
+    var m=lastHitMat4.elements;
+    var n=new THREE.Vector3(m[4],m[5],m[6]).normalize();
+    var q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),n);
+    obj.quaternion.copy(q);
+  }else if(lastSurfType==='ceiling'){
+    obj.rotation.set(Math.PI,0,0);
   }
 
-  obj.scale.setScalar(0);
+  obj.scale.setScalar(userScale);
+
+  // Price label sprite
+  var lbl=makePriceLabel(def.name,def.price);
+  lbl.position.set(lastHitPos.x,lastHitPos.y+.35,lastHitPos.z);
+  scene.add(lbl);
+
   scene.add(obj);
-  var entry = {obj:obj, def:def, surface:lastSurfaceType, wished:false, variantColor:activeVariantColor};
+  var entry={obj:obj,def:def,label:lbl,baseY:lastHitPos.y,surfType:lastSurfType,userRot:0};
   placed.push(entry);
-  lastPlaced = entry;
+  lastEntry=entry;
   updateCount();
 
-  // Pop-in animation
-  var sv=0, tgt=userScale;
-  var iv=setInterval(function(){sv=Math.min(sv+.07,1);obj.scale.setScalar(tgt*(1-Math.pow(1-sv,3)));if(sv>=1){clearInterval(iv);showProductPanel(entry);}},14);
+  // Pop-in
+  var sv=0,tgt=userScale;
+  var iv=setInterval(function(){sv=Math.min(sv+.07,1);obj.scale.setScalar(tgt*(1-Math.pow(1-sv,3)));if(sv>=1)clearInterval(iv);},14);
 
-  var emoji={floor:'🟢',wall:'🟠',ceiling:'🔵'}[lastSurfaceType]||'';
-  toast(emoji+' '+def.name+' placed on '+lastSurfaceType+'!');
+  showPanel(entry);
+  toast(def.em+' '+def.name+' placed!');
 }
 
-function doMoveAction() {
-  if(grabbedObj) {
-    setHighlight(grabbedObj,false); grabbedObj=null;
-    showGrabbed(false);
-    if(surfaceFound){showMoveHint(true);setStatus('POINT AT FURNITURE · TAP TO GRAB');}
-    toast('Dropped ✓'); return;
+function doGrab(){
+  if(grabbedEntry){
+    // Drop
+    setHL(grabbedEntry.obj,false);
+    grabbedEntry=null;
+    showGrabHint(true);
+    setStatus('Tap an object to grab it');
+    hidePanel();
+    toast('Placed ✓');
+    return;
   }
   if(!placed.length){toast('No furniture placed yet');return;}
-  var camPos=new THREE.Vector3(); var camDir=new THREE.Vector3();
-  camera.getWorldPosition(camPos); camera.getWorldDirection(camDir);
-  var best=null, bestScore=Infinity;
-  placed.forEach(function(item) {
-    var toObj=new THREE.Vector3().subVectors(item.obj.position,camPos);
-    var dist=toObj.length(); if(dist<.05) return;
-    toObj.normalize(); var dot=toObj.dot(camDir); if(dot<.3) return;
-    var score=Math.acos(Math.min(1,dot))*3+dist*.05;
-    if(score<bestScore){bestScore=score;best=item;}
+  var camPos=new THREE.Vector3();var camDir=new THREE.Vector3();
+  camera.getWorldPosition(camPos);camera.getWorldDirection(camDir);
+  var best=null,bestSc=Infinity;
+  placed.forEach(function(e){
+    var toObj=new THREE.Vector3().subVectors(e.obj.position,camPos);
+    var dist=toObj.length();if(dist<.05)return;
+    toObj.normalize();
+    var dot=toObj.dot(camDir);if(dot<.3)return;
+    var sc=Math.acos(Math.min(1,dot))*3+dist*.05;
+    if(sc<bestSc){bestSc=sc;best=e;}
   });
-  if(!best){toast('Point camera at a furniture piece');return;}
-  grabbedObj=best.obj; setHighlight(grabbedObj,true);
-  showMoveHint(false); showGrabbed(true);
-  setStatus('MOVE PHONE · TAP TO DROP');
-  toast('Grabbed! Move phone to reposition');
+  if(!best){toast('Point your camera at a furniture item');return;}
+  grabbedEntry=best;lastEntry=best;
+  setHL(grabbedEntry.obj,true);
+  showGrabHint(false);
+  showPanel(grabbedEntry);
+  setStatus('Move phone to reposition · swipe to rotate · tap to drop');
+  toast('Selected: '+best.def.name);
 }
 
-// ── PRODUCT PANEL ────────────────────────────────────────────────────────────
-function showProductPanel(entry) {
-  var def=entry.def;
-  document.getElementById('pp-name').textContent=def.name;
-  document.getElementById('pp-price').textContent='₱'+def.price.toLocaleString();
-  document.getElementById('pp-dims').textContent='⟷ '+def.dims;
-  var sb=document.getElementById('pp-surface-badge');
-  sb.textContent={floor:'▭ FLOOR',wall:'▮ WALL',ceiling:'▭ CEILING'}[entry.surface]||'';
-  sb.className='prod-surface '+entry.surface;
+// ── TOUCH ROTATION (move mode) ────────────────────────────────
+function onTouchStart(e){
+  if(mode!=='move'||!grabbedEntry)return;
+  touchStartX=e.touches[0].clientX;touchRotating=true;
+}
+function onTouchMove(e){
+  if(!touchRotating||!grabbedEntry)return;
+  var dx=e.touches[0].clientX-touchStartX;
+  grabbedEntry.obj.rotation.y+=dx*.008;
+  grabbedEntry.userRot=grabbedEntry.obj.rotation.y;
+  touchStartX=e.touches[0].clientX;
+}
+function onTouchEnd(){touchRotating=false;}
+
+// ── PRODUCT PANEL ────────────────────────────────────────────
+function showPanel(entry){
+  var d=entry.def;
+  document.getElementById('pp-name').textContent=d.name;
+  document.getElementById('pp-price').textContent='₱'+d.price.toLocaleString();
+  document.getElementById('pp-dims').textContent='📐 '+d.dims;
+  var sp=document.getElementById('pp-surface');
+  sp.textContent={floor:'▭ Floor',wall:'▮ Wall',ceiling:'▭ Ceiling'}[entry.surfType];
+  sp.className=entry.surfType;
 
   // Variants
-  var vr=document.getElementById('pp-variants'); vr.innerHTML='';
-  def.variants.forEach(function(c,i) {
-    var b=document.createElement('div');
-    b.className='var-btn'+(i===0?' active':'');
-    b.style.background=c; b.title=c;
-    b.addEventListener('click',function() {
-      document.querySelectorAll('.var-btn').forEach(function(x){x.classList.remove('active');});
-      b.classList.add('active');
-      // Rebuild model with new color
-      var oldObj=entry.obj;
-      var oldPos=oldObj.position.clone();
-      var oldRot=oldObj.rotation.clone();
-      var oldScale=oldObj.scale.x;
-      scene.remove(oldObj);
-      activeVariantColor=c;
-      var newObj=def.fn();
-      newObj.position.copy(oldPos);
-      newObj.rotation.copy(oldRot);
-      newObj.scale.setScalar(oldScale);
-      newObj.userData=Object.assign({},oldObj.userData);
-      scene.add(newObj);
-      entry.obj=newObj;
-      entry.variantColor=c;
-      if(lastPlaced&&lastPlaced.obj===oldObj) lastPlaced.obj=newObj;
+  var vrow=document.getElementById('pp-variants');vrow.innerHTML='';
+  d.variants.forEach(function(c,i){
+    var dot=document.createElement('div');dot.className='vdot'+(i===(d._selVariant||0)?' on':'');
+    dot.style.background=c;
+    dot.addEventListener('click',function(){
+      d._selVariant=i;
+      document.querySelectorAll('.vdot').forEach(function(v,vi){v.classList.toggle('on',vi===i);});
+      // Rebuild object with new variant
+      var oldObj=entry.obj;var oldLbl=entry.label;
+      activeVC=c;var newObj=d.fn();activeVC=null;
+      newObj.position.copy(oldObj.position);newObj.rotation.copy(oldObj.rotation);newObj.scale.copy(oldObj.scale);
+      newObj.userData.baseY=oldObj.userData.baseY;
+      scene.remove(oldObj);scene.add(newObj);entry.obj=newObj;
+      if(grabbedEntry===entry)setHL(newObj,true);
+      toast('Color changed');
     });
-    vr.appendChild(b);
+    vrow.appendChild(dot);
   });
 
-  // Wish state
-  var wb=document.getElementById('btn-wish');
-  wb.textContent=entry.wished?'♥ Wishlisted':'♡ Wishlist';
-  wb.className='act-btn btn-wish'+(entry.wished?' wished':'');
+  // Wishlist button state
+  var wb=document.getElementById('btn-wishlist');
+  wb.className='pp-btn'+(wishSet[d.id]?' wished':'');
+  wb.textContent=wishSet[d.id]?'♥ Saved':'♡ Save';
 
-  document.getElementById('product-panel').classList.add('show');
+  // Show rotate hint only in move mode
+  document.getElementById('rotate-hint').style.display=mode==='move'?'block':'none';
+  document.getElementById('place-panel').classList.add('show');
 }
+function hidePanel(){document.getElementById('place-panel').classList.remove('show');}
 
-function hidePanel() {
-  document.getElementById('product-panel').classList.remove('show');
-}
+// ── VARIANT CHANGE COLORS EXISTING OBJECT ─────────────────────
+// (done inline in showPanel click handler above)
 
-// ── ADD TO CART ───────────────────────────────────────────────────────────────
-function addToCart(entry) {
-  if(!entry) return;
-  cart.push({id:entry.def.id,name:entry.def.name,price:entry.def.price,variant:entry.variantColor});
-  var cn=document.getElementById('cart-notif');
-  cn.textContent='🛒 '+entry.def.name+' added to cart! ('+cart.length+' item'+(cart.length>1?'s':'')+')';
-  cn.classList.add('show');
-  setTimeout(function(){cn.classList.remove('show');},2800);
-  toast('₱'+entry.def.price.toLocaleString()+' · View cart to checkout');
-}
-
-// ── WISHLIST ──────────────────────────────────────────────────────────────────
-function toggleWishlist(entry) {
-  if(!entry) return;
-  entry.wished = !entry.wished;
-  if(entry.wished) {
-    wishlist.push(entry);
-    toast('♥ Added to wishlist!');
-  } else {
-    wishlist = wishlist.filter(function(w){return w!==entry;});
-    toast('Removed from wishlist');
-  }
-  // Update button
-  var wb=document.getElementById('btn-wish');
-  wb.textContent=entry.wished?'♥ Wishlisted':'♡ Wishlist';
-  wb.className='act-btn btn-wish'+(entry.wished?' wished':'');
-  // Update rail button
-  updateWishCount();
-}
-
-function updateWishCount() {
-  var wc=document.getElementById('wc'); wc.textContent=wishlist.length;
-  document.getElementById('wish-count').classList.toggle('show',wishlist.length>0);
-}
-
-function renderWishlist() {
-  var list=document.getElementById('wish-list');
-  if(!wishlist.length){list.innerHTML='<div id="wish-empty">NO ITEMS YET</div>';return;}
-  list.innerHTML='';
-  wishlist.forEach(function(entry,i) {
-    var item=document.createElement('div'); item.className='wish-item';
-    item.innerHTML=
-      '<div class="wi-em">'+entry.def.em+'</div>'+
-      '<div class="wi-info"><div class="wi-name">'+entry.def.name+'</div><div class="wi-price">₱'+entry.def.price.toLocaleString()+'</div></div>'+
-      '<div class="wi-rm" data-i="'+i+'">✕</div>';
-    item.querySelector('.wi-rm').addEventListener('click',function() {
-      var idx=parseInt(this.dataset.i);
-      wishlist[idx].wished=false; wishlist.splice(idx,1);
-      updateWishCount(); renderWishlist();
-    });
-    list.appendChild(item);
-  });
-}
-
-// ── SCREENSHOT ────────────────────────────────────────────────────────────────
-function takeScreenshot() {
-  // Flash effect
-  var fl=document.getElementById('flash');
-  fl.style.opacity='1'; setTimeout(function(){fl.style.opacity='0';},120);
-  // Capture canvas
-  try {
-    var dataURL=renderer.domElement.toDataURL('image/png');
-    var a=document.createElement('a');
-    a.href=dataURL; a.download='MIRA-AR-'+Date.now()+'.png'; a.click();
-    toast('📸 Photo saved!');
-  } catch(e) {
-    toast('Screenshot requires HTTPS');
-  }
-}
-
-// ── MODE ─────────────────────────────────────────────────────────────────────
-function setModeUI(m) {
+// ── MODE ─────────────────────────────────────────────────────
+function setModeUI(m){
   mode=m;
-  document.getElementById('mp-place').classList.toggle('on',m==='place');
-  document.getElementById('mp-move').classList.toggle('on',m==='move');
-  if(grabbedObj){setHighlight(grabbedObj,false);grabbedObj=null;}
-  showGrabbed(false); hideAllReticles(); hidePanel();
+  document.getElementById('mb-place').classList.toggle('on',m==='place');
+  document.getElementById('mb-move').classList.toggle('on',m==='move');
+  if(grabbedEntry){setHL(grabbedEntry.obj,false);grabbedEntry=null;}
+  hidePanel();hideReticles();
   if(m==='place'){
-    showMoveHint(false);
-    if(surfaceFound){showTap(true);updateStatusForSurf(lastSurfaceType);}
-    else{showScan(true);showTap(false);setStatus('POINT AT FLOOR · WALL · CEILING');}
-  } else {
-    showTap(false);
-    if(surfaceFound){showMoveHint(true);setStatus('POINT AT FURNITURE · TAP TO GRAB');}
-    else{showScan(true);showMoveHint(false);setStatus('POINT AT FLOOR · WALL · CEILING');}
+    showGrabHint(false);
+    if(surfaceFound){showTapHint(true);setStatus('Tap to place '+surfLabel(lastSurfType));}
+    else{showScan(true);setStatus('Point your camera at a surface');}
+  }else{
+    showTapHint(false);
+    if(surfaceFound){showGrabHint(true);setStatus('Tap an object to grab it');}
+    else{showScan(true);setStatus('Point your camera at a surface');}
   }
 }
 
-// ── UI HELPERS ────────────────────────────────────────────────────────────────
-function setBadge(t,w){var b=document.getElementById('badge');b.textContent=t;b.className='badge'+(w?' warn':'');}
-function setStatus(t){document.getElementById('status-text').textContent=t;}
-function showScan(v){document.getElementById('scan-ui').classList.toggle('show',v);}
-function showTap(v){document.getElementById('tap-hint').classList.toggle('show',v);}
-function showMoveHint(v){document.getElementById('move-hint').classList.toggle('show',v);}
-function showGrabbed(v){document.getElementById('grabbed-ind').classList.toggle('show',v);}
-function updateCount(){document.getElementById('pcnt').textContent=placed.length;}
-function setSurfType(type){
-  var el=document.getElementById('surf-badge');
-  if(!type){el.textContent='';el.className='';return;}
-  el.textContent={floor:'▭ FLOOR',wall:'▮ WALL',ceiling:'▭ CEILING'}[type]||'';
-  el.className=type;
+// ── CART ─────────────────────────────────────────────────────
+function addToCart(entry){
+  if(!entry)return;
+  cart.push({def:entry.def});
+  updateCartCount();
+  toast('🛒 '+entry.def.name+' added to cart!');
 }
-var toastT;
-function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('on');},2800);}
+function updateCartCount(){
+  var n=cart.length;
+  document.getElementById('cart-count').textContent=n;
+}
+function openCart(){
+  var wrap=document.getElementById('cart-items');
+  if(!cart.length){wrap.innerHTML='<div id="cart-empty">No items yet</div>';document.getElementById('cart-total-val').textContent='₱0';document.getElementById('cart-drawer').classList.add('open');return;}
+  wrap.innerHTML='';
+  var total=0;
+  cart.forEach(function(c,i){
+    var d=c.def;total+=d.price;
+    var item=document.createElement('div');item.className='ci';
+    item.innerHTML='<div class="ci-em">'+d.em+'</div><div class="ci-info"><div class="ci-name">'+d.name+'</div><div class="ci-surface">'+{floor:'Floor',wall:'Wall',ceiling:'Ceiling'}[d.surface]+'</div></div><div class="ci-price">₱'+d.price.toLocaleString()+'</div>';
+    wrap.appendChild(item);
+  });
+  document.getElementById('cart-total-val').textContent='₱'+total.toLocaleString();
+  document.getElementById('cart-drawer').classList.add('open');
+}
+function toggleWish(entry){
+  if(!entry)return;
+  var id=entry.def.id;
+  wishSet[id]=!wishSet[id];
+  var wb=document.getElementById('btn-wishlist');
+  wb.className='pp-btn'+(wishSet[id]?' wished':'');
+  wb.textContent=wishSet[id]?'♥ Saved':'♡ Save';
+  toast(wishSet[id]?'Saved to wishlist':'Removed from wishlist');
+}
 
-// ── TRAY ─────────────────────────────────────────────────────────────────────
-function buildTray() {
+// ── SCREENSHOT ───────────────────────────────────────────────
+function takeShot(){
+  var fl=document.getElementById('flash');fl.style.opacity='1';setTimeout(function(){fl.style.opacity='0';},80);
+  setTimeout(function(){
+    var canvas=renderer.domElement;
+    try{
+      var url=canvas.toDataURL('image/png');
+      var a=document.createElement('a');a.href=url;a.download='mira-ar-preview.png';a.click();
+      toast('Photo saved!');
+    }catch(e){toast('Screenshot saved to gallery');}
+  },60);
+}
+
+// ── UI HELPERS ────────────────────────────────────────────────
+function setStatus(t){
+  // no dedicated status bar — use scan label
+  if(document.getElementById('scan-lbl'))document.getElementById('scan-lbl').textContent=t||'POINT AT A SURFACE\nFLOOR · WALL · CEILING';
+}
+function showScan(v){document.getElementById('scan-ui').classList.toggle('show',v);}
+function showTapHint(v){document.getElementById('tap-hint').classList.toggle('show',v);}
+function showGrabHint(v){document.getElementById('grab-hint').classList.toggle('show',v);}
+function setSurfPill(type){
+  var el=document.getElementById('surf-pill');
+  if(!type){el.className='';el.classList.remove('show');el.textContent='';return;}
+  el.className=type;el.classList.add('show');
+  el.textContent={floor:'Floor',wall:'Wall',ceiling:'Ceiling'}[type]||'';
+}
+function surfLabel(t){return {floor:'on floor',wall:'on wall',ceiling:'on ceiling'}[t]||'';}
+function updateCount(){document.getElementById('pcnt').textContent=placed.length;}
+var toastT;
+function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('on');},2600);}
+
+// ── BUILD TRAY ────────────────────────────────────────────────
+function buildTray(){
   var wrap=document.getElementById('cards');
-  CATALOG.forEach(function(m) {
-    var card=document.createElement('div');
-    card.className='card'+(m.id===selId?' sel':'');
-    card.dataset.variantColor=m.variants[0]||'';
-    var dot='<div class="surf-dot '+m.surface+'"></div>';
-    card.innerHTML='<div class="em">'+m.em+'</div><div class="nm">'+m.name+'</div><div class="pr">₱'+m.price.toLocaleString()+'</div>'+dot;
-    card.addEventListener('click',function() {
-      document.querySelectorAll('.card').forEach(function(c){c.classList.remove('sel');});
-      card.classList.add('sel'); selId=m.id;
-      toast(m.em+' '+m.name+' · '+{floor:'Floor',wall:'Wall',ceiling:'Ceiling'}[m.surface]);
+  CATALOG.forEach(function(def){
+    var card=document.createElement('div');card.className='card';card.dataset.id=def.id;
+    card.innerHTML='<div class="cem">'+def.em+'</div>'+'<div class="cnm">'+def.name+'</div>'+'<div class="cpr">₱'+def.price.toLocaleString()+'</div>'+'<div class="cdot '+def.surface+'"></div>';
+    card.addEventListener('click',function(){
+      if(selId===def.id){
+        // Toggle off
+        selId=null;card.classList.remove('sel');
+        hidePanel();toast('Deselected');
+      }else{
+        document.querySelectorAll('.card').forEach(function(c){c.classList.remove('sel');});
+        card.classList.add('sel');selId=def.id;
+        toast(def.em+' '+def.name+' · ₱'+def.price.toLocaleString());
+      }
     });
     wrap.appendChild(card);
   });
 }
 
-// ── BUTTONS ───────────────────────────────────────────────────────────────────
-function bindButtons() {
-  document.getElementById('b-undo').addEventListener('click',function(){
-    if(!placed.length) return;
-    var entry=placed.pop();
-    if(entry.obj===grabbedObj){setHighlight(entry.obj,false);grabbedObj=null;showGrabbed(false);}
-    scene.remove(entry.obj); updateCount();
-    if(lastPlaced&&lastPlaced.obj===entry.obj){lastPlaced=placed[placed.length-1]||null;}
-    hidePanel(); toast('↩ Removed');
+// ── BUTTONS ──────────────────────────────────────────────────
+function bindButtons(){
+  document.getElementById('rb-undo').addEventListener('click',function(){
+    if(!placed.length)return;
+    var e=placed.pop();
+    if(e===grabbedEntry){setHL(e.obj,false);grabbedEntry=null;showGrabHint(false);}
+    scene.remove(e.obj);if(e.label)scene.remove(e.label);
+    if(lastEntry===e)lastEntry=placed[placed.length-1]||null;
+    updateCount();hidePanel();toast('↩ Removed');
   });
-  document.getElementById('b-up').addEventListener('click',function(){
-    if(grabbedObj){var s=Math.min(grabbedObj.scale.x+.15,4);grabbedObj.scale.setScalar(s);toast('Scale: '+s.toFixed(2)+'×');}
-    else{userScale=Math.min(userScale+.25,4);toast('Next size: '+userScale.toFixed(2)+'×');}
+  document.getElementById('rb-plus').addEventListener('click',function(){
+    if(grabbedEntry){var s=Math.min(grabbedEntry.obj.scale.x+.12,4);grabbedEntry.obj.scale.setScalar(s);toast('Bigger');}
+    else{userScale=Math.min(userScale+.2,4);toast('Next size: '+userScale.toFixed(1)+'×');}
   });
-  document.getElementById('b-dn').addEventListener('click',function(){
-    if(grabbedObj){var s=Math.max(grabbedObj.scale.x-.15,.15);grabbedObj.scale.setScalar(s);toast('Scale: '+s.toFixed(2)+'×');}
-    else{userScale=Math.max(userScale-.25,.25);toast('Next size: '+userScale.toFixed(2)+'×');}
+  document.getElementById('rb-minus').addEventListener('click',function(){
+    if(grabbedEntry){var s=Math.max(grabbedEntry.obj.scale.x-.12,.15);grabbedEntry.obj.scale.setScalar(s);toast('Smaller');}
+    else{userScale=Math.max(userScale-.2,.25);toast('Next size: '+userScale.toFixed(1)+'×');}
   });
-  document.getElementById('b-shot').addEventListener('click',takeScreenshot);
-  document.getElementById('b-wish').addEventListener('click',function(){
-    renderWishlist(); document.getElementById('wish-drawer').classList.add('open');
+  document.getElementById('rb-photo').addEventListener('click',takeShot);
+  document.getElementById('rb-clear').addEventListener('click',function(){
+    if(grabbedEntry){setHL(grabbedEntry.obj,false);grabbedEntry=null;}
+    placed.forEach(function(e){scene.remove(e.obj);if(e.label)scene.remove(e.label);});
+    placed=[];lastEntry=null;updateCount();hidePanel();toast('All cleared');
   });
-  document.getElementById('b-clr').addEventListener('click',function(){
-    if(grabbedObj){setHighlight(grabbedObj,false);grabbedObj=null;showGrabbed(false);}
-    placed.forEach(function(e){scene.remove(e.obj);}); placed=[];lastPlaced=null;updateCount();hidePanel();toast('All cleared');
-  });
-  document.getElementById('enter-ar').addEventListener('click',enterAR);
-  document.getElementById('mp-place').addEventListener('click',function(){if(xrSession)setModeUI('place');});
-  document.getElementById('mp-move').addEventListener('click',function(){if(xrSession)setModeUI('move');});
-  document.getElementById('btn-cart').addEventListener('click',function(){addToCart(lastPlaced);});
-  document.getElementById('btn-wish').addEventListener('click',function(){toggleWishlist(lastPlaced);updateWishCount();});
-  document.getElementById('wish-close').addEventListener('click',function(){document.getElementById('wish-drawer').classList.remove('open');});
+  document.getElementById('ar-btn').addEventListener('click',enterAR);
+  document.getElementById('mb-place').addEventListener('click',function(){if(xrSession)setModeUI('place');});
+  document.getElementById('mb-move').addEventListener('click',function(){if(xrSession)setModeUI('move');});
+  document.getElementById('btn-add-cart').addEventListener('click',function(){addToCart(lastEntry);});
+  document.getElementById('btn-wishlist').addEventListener('click',function(){toggleWish(lastEntry);});
+  document.getElementById('list-btn').addEventListener('click',openCart);
+  document.getElementById('cart-close').addEventListener('click',function(){document.getElementById('cart-drawer').classList.remove('open');});
+  document.getElementById('checkout-btn').addEventListener('click',function(){toast('Proceeding to checkout…');document.getElementById('cart-drawer').classList.remove('open');});
 }
 
-// ── AR CHECK ──────────────────────────────────────────────────────────────────
-function checkAR() {
+// ── AR CHECK ─────────────────────────────────────────────────
+function checkAR(){
   if(!navigator.xr){markNA();return;}
   navigator.xr.isSessionSupported('immersive-ar').then(function(ok){if(!ok)markNA();}).catch(markNA);
 }
-function markNA() {
-  var btn=document.getElementById('enter-ar');btn.innerHTML='⚠ AR NOT AVAILABLE';btn.classList.add('na');
-  btn.onclick=function(){toast('Use Chrome on Android with ARCore');};
-  setBadge('● NO WEBXR',true);
-  setTimeout(function(){toast('Open in Chrome on an ARCore-compatible Android device');},2000);
+function markNA(){
+  var btn=document.getElementById('ar-btn');btn.innerHTML='⚠ AR Not Available';btn.classList.add('na');
+  btn.onclick=function(){toast('Requires Chrome on Android with ARCore');};
 }
 
-// ── DEEP LINK SUPPORT ─────────────────────────────────────────────────────────
-// Usage: ar-zone.html?product=sofa  — auto-selects a product on load
-function handleDeepLink() {
-  var params=new URLSearchParams(window.location.search);
-  var pid=params.get('product');
-  if(pid && CATALOG.find(function(m){return m.id===pid;})) {
-    selId=pid;
-    document.querySelectorAll('.card').forEach(function(c){c.classList.remove('sel');});
-    var target=document.querySelector('[data-id="'+pid+'"]');
-    if(target) target.classList.add('sel');
-  }
+// ── DEEP LINK ─────────────────────────────────────────────────
+function handleDeepLink(){
+  var pid=new URLSearchParams(window.location.search).get('product');
+  if(!pid)return;
+  var card=document.querySelector('[data-id="'+pid+'"]');
+  if(card){card.click();card.scrollIntoView({inline:'center',behavior:'smooth'});}
 }
 
-// ── LOADER ────────────────────────────────────────────────────────────────────
-function runLoader(cb) {
-  var fill=document.getElementById('lfill'),p=0;
-  var iv=setInterval(function(){p+=5+Math.random()*10;fill.style.width=Math.min(p,100)+'%';if(p>=100){clearInterval(iv);setTimeout(cb,150);}},50);
+// ── LOADER ───────────────────────────────────────────────────
+function runLoader(cb){
+  var fill=document.getElementById('loader-fill'),p=0;
+  var iv=setInterval(function(){p+=5+Math.random()*10;fill.style.width=Math.min(p,100)+'%';if(p>=100){clearInterval(iv);setTimeout(cb,120);}},45);
 }
 
-// ── BOOT ──────────────────────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded',function() {
-  runLoader(function() {
+// ── BOOT ─────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',function(){
+  runLoader(function(){
     try{initScene();buildTray();bindButtons();checkAR();handleDeepLink();startPreview();}
-    catch(e){console.error(e);document.getElementById('loader').innerHTML='<h1 style="color:#FF2D6B;font-family:monospace">ERROR</h1><p style="color:rgba(255,255,255,.4);font-family:monospace;font-size:.75rem;margin-top:1rem;max-width:280px;text-align:center">'+e.message+'</p>';return;}
-    var ld=document.getElementById('loader');ld.style.opacity='0';setTimeout(function(){ld.remove();},500);
+    catch(e){console.error(e);document.getElementById('loader').innerHTML='<p style="color:red;font-family:monospace;padding:2rem">'+e.message+'</p>';return;}
+    var ld=document.getElementById('loader');ld.style.opacity='0';setTimeout(function(){ld.remove();},400);
   });
 });
+
 })();
 </script>
 </body>
