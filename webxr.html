@@ -25,25 +25,30 @@ body{background:var(--dark);color:#fff;font-family:'Syne',sans-serif;height:100v
 #topbar{pointer-events:all;position:absolute;top:0;left:0;right:0;padding:1rem 1.2rem;background:linear-gradient(to bottom,rgba(7,10,14,.92),transparent);display:flex;align-items:center;justify-content:space-between;}
 .logo{font-weight:800;font-size:1.1rem;letter-spacing:-1px;}
 .logo b{color:var(--neon);}
-.badge{font-family:'Space Mono',monospace;font-size:.55rem;letter-spacing:1.5px;border:1px solid rgba(0,255,178,.3);border-radius:99px;padding:.25rem .75rem;color:var(--neon);}
+.badge{font-family:'Space Mono',monospace;font-size:.55rem;letter-spacing:1.5px;border:1px solid rgba(0,255,178,.3);border-radius:99px;padding:.25rem .75rem;color:var(--neon);transition:color .3s,border-color .3s;}
+.badge.warn{color:var(--red);border-color:rgba(255,45,107,.35);}
 
 /* STATUS */
 #status-wrap{position:absolute;top:3.8rem;left:50%;transform:translateX(-50%);pointer-events:none;}
-#status-text{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:2px;color:rgba(255,255,255,.5);background:rgba(7,10,14,.55);backdrop-filter:blur(6px);border-radius:99px;padding:.3rem .9rem;border:1px solid rgba(255,255,255,.06);white-space:nowrap;}
+#status-text{font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:1.8px;color:rgba(255,255,255,.5);background:rgba(7,10,14,.55);backdrop-filter:blur(6px);border-radius:99px;padding:.3rem .9rem;border:1px solid rgba(255,255,255,.06);white-space:nowrap;}
+
+/* MODE PILL */
+#mode-pill{position:absolute;top:4.8rem;left:50%;transform:translateX(-50%);pointer-events:all;display:none;gap:0;border-radius:99px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:rgba(7,10,14,.8);backdrop-filter:blur(10px);}
+#mode-pill.show{display:flex;}
+.mode-btn{font-family:'Space Mono',monospace;font-size:.55rem;letter-spacing:1.5px;padding:.4rem .9rem;cursor:pointer;border:none;background:transparent;color:rgba(255,255,255,.4);transition:all .2s;touch-action:manipulation;}
+.mode-btn.active{background:var(--neon);color:#000;font-weight:700;}
 
 /* SCAN UI */
 #scan-ui{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.8rem;opacity:0;transition:opacity .4s;}
 #scan-ui.show{opacity:1;}
 .rings{position:relative;width:96px;height:96px;display:flex;align-items:center;justify-content:center;}
 .ring{position:absolute;border-radius:50%;border:1.5px solid var(--neon);animation:rp 2s ease-in-out infinite;}
-.r1{width:36px;height:36px;}
-.r2{width:60px;height:60px;animation-delay:.25s;opacity:.6;}
-.r3{width:88px;height:88px;animation-delay:.5s;opacity:.3;}
+.r1{width:36px;height:36px;}.r2{width:60px;height:60px;animation-delay:.25s;opacity:.6;}.r3{width:88px;height:88px;animation-delay:.5s;opacity:.3;}
 .crosshair{width:12px;height:12px;position:relative;}
 .crosshair::before,.crosshair::after{content:'';position:absolute;background:var(--neon);}
 .crosshair::before{width:2px;height:12px;left:5px;top:0;}
 .crosshair::after{width:12px;height:2px;top:5px;left:0;}
-@keyframes rp{0%,100%{transform:scale(1);opacity:inherit;}50%{transform:scale(.9);opacity:.3;}}
+@keyframes rp{0%,100%{transform:scale(1);}50%{transform:scale(.9);opacity:.3;}}
 .scan-lbl{font-family:'Space Mono',monospace;font-size:.58rem;color:rgba(255,255,255,.45);letter-spacing:2px;}
 
 /* TAP HINT */
@@ -53,6 +58,14 @@ body{background:var(--dark);color:#fff;font-family:'Syne',sans-serif;height:100v
 @keyframes ping{0%{box-shadow:0 0 0 0 rgba(0,255,178,.5);}70%{box-shadow:0 0 0 16px rgba(0,255,178,0);}100%{box-shadow:0 0 0 0 rgba(0,255,178,0);}}
 .tap-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:1.3rem;}
 .tap-lbl{font-family:'Space Mono',monospace;font-size:.58rem;color:var(--neon);letter-spacing:2px;}
+
+/* MOVE HINT — shown when an object is selected for dragging */
+#move-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.6rem;opacity:0;transition:opacity .4s;}
+#move-hint.show{opacity:1;}
+.move-ring{width:60px;height:60px;border-radius:50%;border:2px dashed var(--neon);animation:spin 3s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.move-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:1.3rem;}
+.move-lbl{font-family:'Space Mono',monospace;font-size:.58rem;color:var(--neon);letter-spacing:2px;}
 
 /* RAIL */
 #rail{pointer-events:all;position:absolute;right:.9rem;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:.5rem;}
@@ -88,6 +101,10 @@ body{background:var(--dark);color:#fff;font-family:'Syne',sans-serif;height:100v
 #toast{position:fixed;bottom:8.5rem;left:50%;transform:translateX(-50%) translateY(8px);font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:1px;color:var(--neon);background:rgba(0,255,178,.1);border:1px solid rgba(0,255,178,.3);border-radius:99px;padding:.4rem 1rem;white-space:nowrap;pointer-events:none;z-index:9999;opacity:0;transition:all .22s;}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
 
+/* Selected object highlight ring (DOM element for UX) */
+#sel-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;width:70px;height:70px;border-radius:50%;border:2px solid var(--neon);box-shadow:0 0 14px rgba(0,255,178,.4);display:none;animation:sel-pulse 1s ease-in-out infinite;}
+@keyframes sel-pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+
 body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;background:repeating-linear-gradient(to bottom,transparent 0,transparent 3px,rgba(0,0,0,.018) 3px,rgba(0,0,0,.018) 4px);}
 </style>
 </head>
@@ -106,11 +123,15 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;b
   </div>
   <div id="status-wrap"><span id="status-text">SELECT A MODEL · TAP ENTER AR</span></div>
 
+  <!-- Mode toggle: PLACE vs MOVE -->
+  <div id="mode-pill">
+    <button class="mode-btn active" id="mode-place">＋ PLACE</button>
+    <button class="mode-btn" id="mode-move">✥ MOVE</button>
+  </div>
+
   <div id="scan-ui">
     <div class="rings">
-      <div class="ring r3"></div>
-      <div class="ring r2"></div>
-      <div class="ring r1"></div>
+      <div class="ring r3"></div><div class="ring r2"></div><div class="ring r1"></div>
       <div class="crosshair"></div>
     </div>
     <div class="scan-lbl">SCANNING SURFACE…</div>
@@ -122,6 +143,14 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;b
       <div class="tap-icon">👆</div>
     </div>
     <div class="tap-lbl">TAP TO PLACE</div>
+  </div>
+
+  <div id="move-hint">
+    <div style="position:relative;width:60px;height:60px;">
+      <div class="move-ring"></div>
+      <div class="move-icon">✥</div>
+    </div>
+    <div class="move-lbl">TAP OBJECT TO GRAB · TAP AGAIN TO DROP</div>
   </div>
 
   <div id="rail">
@@ -153,8 +182,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;b
 (function(){
 'use strict';
 
-// ── MODELS ──────────────────────────────────────────────────────────
-// All models are built at ~0.15–0.2m size, sitting above y=0
+// ── MODELS ──────────────────────────────────────────────────────
 var MODELS=[
   {id:'cube',   name:'Cube',   em:'📦', fn:mkCube},
   {id:'sphere', name:'Sphere', em:'🔮', fn:mkSphere},
@@ -166,33 +194,22 @@ var MODELS=[
   {id:'ring',   name:'Ring',   em:'💍', fn:mkRing},
 ];
 
-function mat(c,m,r,opts){
-  var o=Object.assign({color:c,metalness:m||0,roughness:r||.5},opts||{});
-  return new THREE.MeshStandardMaterial(o);
-}
+function mat(c,m,r,x){ return new THREE.MeshStandardMaterial(Object.assign({color:c,metalness:m||0,roughness:r||.5},x||{})); }
 
-// Each builder returns a Group. The group's local origin = bottom of model.
 function mkCube(){
   var g=new THREE.Group();
   var m=new THREE.Mesh(new THREE.BoxGeometry(.18,.18,.18),mat(0x5599ff,.4,.3));
-  m.position.y=.09; // sit on floor
-  m.castShadow=true;
-  g.add(m); return g;
+  m.position.y=.09; m.castShadow=true; g.add(m); return g;
 }
 function mkSphere(){
   var g=new THREE.Group();
   var m=new THREE.Mesh(new THREE.SphereGeometry(.1,32,32),mat(0xff44cc,.7,.15));
-  m.position.y=.1;
-  m.castShadow=true;
-  g.add(m); return g;
+  m.position.y=.1; m.castShadow=true; g.add(m); return g;
 }
 function mkTorus(){
   var g=new THREE.Group();
   var m=new THREE.Mesh(new THREE.TorusGeometry(.1,.036,16,48),mat(0x44ffaa,.5,.2));
-  m.rotation.x=Math.PI/2;
-  m.position.y=.04;
-  m.castShadow=true;
-  g.add(m); return g;
+  m.rotation.x=Math.PI/2; m.position.y=.04; m.castShadow=true; g.add(m); return g;
 }
 function mkRocket(){
   var g=new THREE.Group();
@@ -209,14 +226,12 @@ function mkRocket(){
 function mkGem(){
   var g=new THREE.Group();
   var m=new THREE.Mesh(new THREE.OctahedronGeometry(.11,0),mat(0x99bbff,.95,.02,{transparent:true,opacity:.82}));
-  m.position.y=.11; m.castShadow=true;
-  g.add(m); return g;
+  m.position.y=.11; m.castShadow=true; g.add(m); return g;
 }
 function mkPyramid(){
   var g=new THREE.Group();
   var m=new THREE.Mesh(new THREE.ConeGeometry(.12,.2,4),mat(0xffdd44,.25,.45));
-  m.position.y=.1; m.castShadow=true;
-  g.add(m); return g;
+  m.position.y=.1; m.castShadow=true; g.add(m); return g;
 }
 function mkTree(){
   var g=new THREE.Group();
@@ -233,49 +248,74 @@ function mkRing(){
   var r=new THREE.Mesh(new THREE.TorusGeometry(.08,.016,12,40),mat(0xffcc44,.92,.04));
   r.rotation.x=Math.PI/2; r.position.y=.016; g.add(r);
   var gem=new THREE.Mesh(new THREE.OctahedronGeometry(.024),mat(0x55aaff,.85,.02));
-  gem.position.y=.085; g.add(gem);
-  return g;
+  gem.position.y=.085; g.add(gem); return g;
+}
+
+// ── HIGHLIGHT MATERIALS ───────────────────────────────────────────
+// When selected for move, we tint child meshes
+function setHighlight(obj, on){
+  obj.traverse(function(child){
+    if(!child.isMesh) return;
+    if(on){
+      // store original emissive
+      if(!child.userData._emStored){
+        child.userData._emStored = child.material.emissive ? child.material.emissive.clone() : new THREE.Color(0,0,0);
+        child.userData._emStored2 = child.material.emissiveIntensity || 0;
+      }
+      child.material = child.material.clone();
+      child.material.emissive = new THREE.Color(0x00ffb2);
+      child.material.emissiveIntensity = .35;
+    } else {
+      if(child.userData._emStored){
+        child.material = child.material.clone();
+        child.material.emissive = child.userData._emStored;
+        child.material.emissiveIntensity = child.userData._emStored2;
+      }
+    }
+  });
 }
 
 // ── STATE ─────────────────────────────────────────────────────────
-var scene,camera,renderer;
-var reticle; // THREE.Group
-var selId=MODELS[0].id;
-var placed=[];
-var userScale=1.0;
-var surfaceFound=false;
+var scene, camera, renderer, reticle;
+var selId = MODELS[0].id;
+var placed = [];        // all placed groups
+var userScale = 1.0;
+var surfaceFound = false;
 
-var xrSession=null;
-var xrRefSpace=null;   // 'local'
-var viewerSpace=null;  // 'viewer'
-var hitTestSrc=null;
+// Mode: 'place' or 'move'
+var mode = 'place';
 
-// Last valid hit pose — stored each frame so onSelect can read it
-var lastHitMatrix=null;
+// Move mode state
+var grabbedObj = null;  // currently grabbed object
 
-var prevObjs=[];
-var prevActive=false;
-var prevRAF=null;
+var xrSession = null;
+var xrRefSpace = null;
+var hitTestSrc = null;
+var lastHitMatrix = null;  // updated every frame when surface found
+
+// Raycaster for picking objects in move mode
+var raycaster = new THREE.Raycaster();
+
+// Preview
+var prevObjs=[], prevActive=false, prevRAF=null;
 
 // ── SCENE INIT ────────────────────────────────────────────────────
 function initScene(){
-  scene=new THREE.Scene();
-  camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.005,50);
+  scene  = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.005,50);
 
-  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+  renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.setSize(innerWidth,innerHeight);
-  renderer.xr.enabled=true;
-  renderer.shadowMap.enabled=true;
-  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.xr.enabled = true;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.domElement.style.cssText='position:fixed;inset:0;z-index:1;';
   document.body.insertBefore(renderer.domElement,document.getElementById('hud'));
 
   scene.add(new THREE.AmbientLight(0xffffff,.7));
   var sun=new THREE.DirectionalLight(0xffffff,1.2);
-  sun.position.set(2,4,2);
-  sun.castShadow=true;
-  scene.add(sun);
+  sun.position.set(2,4,2); sun.castShadow=true; scene.add(sun);
   scene.add(new THREE.HemisphereLight(0xffffff,0x444444,.4));
 
   buildReticle();
@@ -288,32 +328,24 @@ function initScene(){
 }
 
 function buildReticle(){
-  reticle=new THREE.Group();
-  reticle.matrixAutoUpdate=false;
-  reticle.visible=false;
+  reticle = new THREE.Group();
+  reticle.matrixAutoUpdate = false;
+  reticle.visible = false;
 
-  // Flat ring on floor
-  var ring=new THREE.Mesh(
+  reticle.add(new THREE.Mesh(
     new THREE.RingGeometry(.08,.095,40).rotateX(-Math.PI/2),
     new THREE.MeshBasicMaterial({color:0x00FFB2,side:THREE.DoubleSide,depthWrite:false})
-  );
-  reticle.add(ring);
-
-  // Center dot
-  var dot=new THREE.Mesh(
+  ));
+  reticle.add(new THREE.Mesh(
     new THREE.CircleGeometry(.01,20).rotateX(-Math.PI/2),
     new THREE.MeshBasicMaterial({color:0x00FFB2,side:THREE.DoubleSide,depthWrite:false})
-  );
-  reticle.add(dot);
-
-  // Soft shadow blob
+  ));
   var blob=new THREE.Mesh(
     new THREE.CircleGeometry(.1,32).rotateX(-Math.PI/2),
-    new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.22,side:THREE.DoubleSide,depthWrite:false})
+    new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.2,side:THREE.DoubleSide,depthWrite:false})
   );
   blob.position.y=-.001;
   reticle.add(blob);
-
   scene.add(reticle);
 }
 
@@ -323,28 +355,22 @@ function startPreview(){
   MODELS.forEach(function(m,i){
     var obj=m.fn();
     var a=(i/MODELS.length)*Math.PI*2;
-    var r=1.3;
-    obj.position.set(Math.cos(a)*r,-0.5,Math.sin(a)*r-4);
+    obj.position.set(Math.cos(a)*1.3,-0.5,Math.sin(a)*1.3-4);
     obj.scale.setScalar(.8);
     scene.add(obj); prevObjs.push(obj);
   });
   camera.position.set(0,0,0);
   camera.lookAt(0,-.5,-4);
-
   var t=0;
   function loop(){
     if(!prevActive) return;
     prevRAF=requestAnimationFrame(loop);
     t+=.005;
-    prevObjs.forEach(function(o,i){
-      o.rotation.y+=.01;
-      o.position.y=-.5+Math.sin(t+i*.8)*.08;
-    });
+    prevObjs.forEach(function(o,i){ o.rotation.y+=.01; o.position.y=-.5+Math.sin(t+i*.8)*.08; });
     renderer.render(scene,camera);
   }
   loop();
 }
-
 function stopPreview(){
   prevActive=false;
   if(prevRAF){cancelAnimationFrame(prevRAF);prevRAF=null;}
@@ -359,85 +385,86 @@ function enterAR(){
     requiredFeatures:['hit-test'],
     optionalFeatures:['dom-overlay'],
     domOverlay:{root:document.getElementById('hud')}
-  }).then(function(session){
+  })
+  .then(function(session){
     xrSession=session;
     renderer.xr.setReferenceSpaceType('local');
 
-    // Chain: setSession → local refspace → viewer refspace → hit test source
-    renderer.xr.setSession(session)
-    .then(function(){
-      return session.requestReferenceSpace('local');
-    })
-    .then(function(rs){
-      xrRefSpace=rs;
-      return session.requestReferenceSpace('viewer');
-    })
-    .then(function(vs){
-      viewerSpace=vs;
-      return session.requestHitTestSource({space:vs});
-    })
+    return renderer.xr.setSession(session)
+    .then(function(){ return session.requestReferenceSpace('local'); })
+    .then(function(rs){ xrRefSpace=rs; return session.requestReferenceSpace('viewer'); })
+    .then(function(vs){ return session.requestHitTestSource({space:vs}); })
     .then(function(src){
       hitTestSrc=src;
-      console.log('[AR] hit-test source ready');
-    })
-    .catch(function(e){
-      console.error('[AR] setup failed',e);
-      toast('Hit-test setup failed: '+e.message);
+      console.log('[AR] hit-test ready');
     });
-
-    session.addEventListener('end',onSessionEnd);
-    // 'select' fires on tap inside AR
-    session.addEventListener('select',onSelect);
-
+  })
+  .then(function(){
     stopPreview();
+    xrSession.addEventListener('end',onSessionEnd);
+    xrSession.addEventListener('selectstart', onSelectStart);
+    xrSession.addEventListener('selectend',   onSelectEnd);
+
     document.getElementById('enter-ar').classList.add('gone');
+    document.getElementById('mode-pill').classList.add('show');
     setBadge('● ACTIVE');
-    setStatus('SLOWLY SWEEP YOUR CAMERA OVER A FLAT SURFACE');
-    showScan(true); showTap(false);
+    setStatus('SWEEP CAMERA OVER A FLAT SURFACE');
+    showScan(true); showTap(false); showMoveHint(false);
     lastHitMatrix=null; surfaceFound=false;
+    setMode('place');
 
     renderer.setAnimationLoop(arLoop);
   })
-  .catch(function(e){
-    console.error('[AR] requestSession failed',e);
-    toast('Could not start AR: '+e.message);
-  });
+  .catch(function(e){ console.error(e); toast('AR Error: '+e.message); });
 }
 
 function onSessionEnd(){
   renderer.setAnimationLoop(null);
-  hitTestSrc=null; xrRefSpace=null; viewerSpace=null; xrSession=null;
+  hitTestSrc=null; xrRefSpace=null; xrSession=null;
   lastHitMatrix=null; surfaceFound=false;
+  if(grabbedObj){ setHighlight(grabbedObj,false); grabbedObj=null; }
   reticle.visible=false;
   document.getElementById('enter-ar').classList.remove('gone');
+  document.getElementById('mode-pill').classList.remove('show');
   setBadge('● READY');
   setStatus('SELECT A MODEL · TAP ENTER AR');
-  showScan(false); showTap(false);
+  showScan(false); showTap(false); showMoveHint(false);
   startPreview();
 }
 
 // ── AR LOOP ───────────────────────────────────────────────────────
-function arLoop(ts,frame){
-  if(!frame){renderer.render(scene,camera);return;}
+function arLoop(ts, frame){
+  if(!frame){ renderer.render(scene,camera); return; }
 
-  // Run hit test every frame
   if(hitTestSrc && xrRefSpace){
     var hits=frame.getHitTestResults(hitTestSrc);
     if(hits.length>0){
       var pose=hits[0].getPose(xrRefSpace);
       if(pose){
-        // Apply pose to reticle
-        reticle.visible=true;
-        reticle.matrix.fromArray(pose.transform.matrix);
-
-        // Store matrix for use in onSelect
         lastHitMatrix=new THREE.Matrix4().fromArray(pose.transform.matrix);
+
+        // In move mode with grabbed object: follow the surface reticle live
+        if(mode==='move' && grabbedObj){
+          var p=new THREE.Vector3(), q=new THREE.Quaternion(), s=new THREE.Vector3();
+          lastHitMatrix.decompose(p,q,s);
+          grabbedObj.position.set(p.x, p.y, p.z);
+          grabbedObj.userData.baseY = p.y;
+        }
+
+        // Show reticle only in place mode, or when dragging in move mode
+        if(mode==='place'){
+          reticle.visible=true;
+          reticle.matrix.fromArray(pose.transform.matrix);
+        } else {
+          reticle.visible = !!grabbedObj;
+          if(grabbedObj) reticle.matrix.fromArray(pose.transform.matrix);
+        }
 
         if(!surfaceFound){
           surfaceFound=true;
           showScan(false);
-          showTap(true);
-          setStatus('SURFACE READY · TAP TO PLACE OBJECT');
+          if(mode==='place'){ showTap(true); setStatus('TAP TO PLACE OBJECT'); }
+          else { showMoveHint(true); setStatus('TAP AN OBJECT TO GRAB · TAP AGAIN TO DROP'); }
         }
       }
     } else {
@@ -445,16 +472,16 @@ function arLoop(ts,frame){
       lastHitMatrix=null;
       if(surfaceFound){
         surfaceFound=false;
-        showScan(true);
-        showTap(false);
-        setStatus('KEEP SCANNING… POINT AT A FLAT SURFACE');
+        showScan(true); showTap(false); showMoveHint(false);
+        setStatus('SWEEP CAMERA OVER A FLAT SURFACE');
       }
     }
   }
 
-  // Animate placed objects (gentle float)
+  // Animate non-grabbed placed objects
   var t=ts*.001;
   placed.forEach(function(obj,i){
+    if(obj===grabbedObj) return;
     obj.userData.rot=(obj.userData.rot||0)+.006;
     obj.rotation.y=obj.userData.rot;
     obj.position.y=obj.userData.baseY+Math.sin(t*1.3+i*.9)*.012;
@@ -463,58 +490,132 @@ function arLoop(ts,frame){
   renderer.render(scene,camera);
 }
 
-// ── PLACE OBJECT ─────────────────────────────────────────────────
-function onSelect(){
-  // Must have a valid hit pose
-  if(!lastHitMatrix){
-    toast('No surface detected yet');
-    return;
-  }
+// ── INPUT HANDLING ────────────────────────────────────────────────
+// We use selectstart/selectend so we can distinguish a quick tap vs hold
+// For simplicity: tap = selectstart+selectend quickly
+// In PLACE mode: tap places object at lastHitMatrix
+// In MOVE mode:
+//   - tap with no grabbed obj: pick nearest placed object via screen-centre raycast
+//   - tap with grabbed obj: drop it at current hit position
 
+var selectStartTime = 0;
+
+function onSelectStart(){
+  selectStartTime = performance.now();
+}
+
+function onSelectEnd(){
+  var duration = performance.now() - selectStartTime;
+  // Treat as tap if < 500ms
+  if(duration > 500) return;
+
+  if(mode === 'place'){
+    doPlace();
+  } else {
+    doMoveAction();
+  }
+}
+
+function doPlace(){
+  if(!lastHitMatrix){ toast('No surface detected yet'); return; }
   var def=MODELS.find(function(m){return m.id===selId;});
   var obj=def.fn();
-
-  // Extract position and rotation from the hit matrix
-  var pos=new THREE.Vector3();
-  var quat=new THREE.Quaternion();
-  var scl=new THREE.Vector3();
+  var pos=new THREE.Vector3(), quat=new THREE.Quaternion(), scl=new THREE.Vector3();
   lastHitMatrix.decompose(pos,quat,scl);
-
-  // Place at surface position, keeping only Y rotation (so model stands upright)
   obj.position.copy(pos);
-  // Don't copy hit orientation (it can tilt the model) — just keep flat
-  obj.rotation.set(0,quat.y,0);
-
+  obj.rotation.set(0,0,0);
   obj.userData.baseY=pos.y;
   obj.userData.rot=0;
-
-  // Apply user scale
-  obj.scale.setScalar(userScale);
-
+  obj.scale.setScalar(0);
   scene.add(obj);
   placed.push(obj);
   updateCount();
   toast(def.em+' '+def.name+' placed!');
+  // pop-in
+  var s=0, tgt=userScale;
+  var iv=setInterval(function(){ s=Math.min(s+.07,1); obj.scale.setScalar(tgt*(1-Math.pow(1-s,3))); if(s>=1) clearInterval(iv); },14);
+}
 
-  console.log('[AR] placed',def.name,'at',pos.x.toFixed(3),pos.y.toFixed(3),pos.z.toFixed(3),'scale',userScale);
+function doMoveAction(){
+  if(grabbedObj){
+    // Drop: release the grabbed object at current position
+    setHighlight(grabbedObj, false);
+    grabbedObj=null;
+    setStatus('TAP AN OBJECT TO GRAB · TAP AGAIN TO DROP');
+    showMoveHint(true);
+    toast('Object dropped ✓');
+    return;
+  }
+
+  // Pick: find which placed object is closest to camera forward
+  if(!placed.length){ toast('No objects to move'); return; }
+
+  // Use camera's forward direction to find nearest object
+  var camPos = new THREE.Vector3();
+  var camDir = new THREE.Vector3();
+  camera.getWorldPosition(camPos);
+  camera.getWorldDirection(camDir);
+
+  // Find the placed object closest to the camera ray
+  var best=null, bestScore=Infinity;
+  placed.forEach(function(obj){
+    // angle between camera→object direction and camera forward
+    var toObj=new THREE.Vector3().subVectors(obj.position,camPos);
+    var dist=toObj.length();
+    toObj.normalize();
+    var dot=toObj.dot(camDir);          // 1 = directly ahead
+    var angle=Math.acos(Math.max(-1,Math.min(1,dot)));
+    // score: angle matters most, but also prefer closer objects
+    var score = angle*2 + dist*.1;
+    if(dot > .5 && score < bestScore){ bestScore=score; best=obj; }
+  });
+
+  if(!best){ toast('Point your camera at an object to grab it'); return; }
+
+  grabbedObj=best;
+  setHighlight(grabbedObj, true);
+  showMoveHint(false);
+  setStatus('MOVE YOUR PHONE · TAP TO DROP');
+  toast('Grabbed! Move your phone to reposition');
+}
+
+// ── MODE SWITCHING ────────────────────────────────────────────────
+function setMode(m){
+  mode=m;
+  document.getElementById('mode-place').classList.toggle('active', m==='place');
+  document.getElementById('mode-move').classList.toggle('active',  m==='move');
+
+  // Release any grabbed object
+  if(grabbedObj){ setHighlight(grabbedObj,false); grabbedObj=null; }
+
+  if(m==='place'){
+    showMoveHint(false);
+    if(surfaceFound){ showTap(true); setStatus('TAP TO PLACE OBJECT'); }
+    else { showScan(true); setStatus('SWEEP CAMERA OVER A FLAT SURFACE'); }
+    reticle.visible=surfaceFound;
+  } else {
+    showTap(false);
+    reticle.visible=false;
+    if(surfaceFound){ showMoveHint(true); setStatus('TAP AN OBJECT TO GRAB · TAP AGAIN TO DROP'); }
+    else { showScan(true); setStatus('SWEEP CAMERA OVER A FLAT SURFACE'); }
+  }
 }
 
 // ── UI HELPERS ────────────────────────────────────────────────────
-function setBadge(t){document.getElementById('badge').textContent=t;}
-function setStatus(t){document.getElementById('status-text').textContent=t;}
-function showScan(v){document.getElementById('scan-ui').classList.toggle('show',v);}
-function showTap(v){document.getElementById('tap-hint').classList.toggle('show',v);}
-function updateCount(){document.getElementById('pcnt').textContent=placed.length;}
-
+function setBadge(t,w){ var b=document.getElementById('badge'); b.textContent=t; b.className='badge'+(w?' warn':''); }
+function setStatus(t){ document.getElementById('status-text').textContent=t; }
+function showScan(v){ document.getElementById('scan-ui').classList.toggle('show',v); }
+function showTap(v){ document.getElementById('tap-hint').classList.toggle('show',v); }
+function showMoveHint(v){ document.getElementById('move-hint').classList.toggle('show',v); }
+function updateCount(){ document.getElementById('pcnt').textContent=placed.length; }
 var toastT;
 function toast(msg){
   var el=document.getElementById('toast');
   el.textContent=msg; el.classList.add('on');
-  clearTimeout(toastT);
-  toastT=setTimeout(function(){el.classList.remove('on');},2500);
+  clearTimeout(toastT); toastT=setTimeout(function(){el.classList.remove('on');},2500);
 }
 
-// ── BUILD TRAY ────────────────────────────────────────────────────
+// ── TRAY ─────────────────────────────────────────────────────────
 function buildTray(){
   var wrap=document.getElementById('cards');
   MODELS.forEach(function(m){
@@ -523,8 +624,7 @@ function buildTray(){
     card.innerHTML='<div class="em">'+m.em+'</div><div class="nm">'+m.name+'</div>';
     card.addEventListener('click',function(){
       document.querySelectorAll('.card').forEach(function(c){c.classList.remove('sel');});
-      card.classList.add('sel');
-      selId=m.id;
+      card.classList.add('sel'); selId=m.id;
       toast(m.em+' '+m.name+' selected');
     });
     wrap.appendChild(card);
@@ -534,46 +634,59 @@ function buildTray(){
 // ── BUTTONS ──────────────────────────────────────────────────────
 function bindButtons(){
   document.getElementById('b-undo').addEventListener('click',function(){
-    if(!placed.length)return;
-    scene.remove(placed.pop()); updateCount(); toast('↩ Removed last object');
+    if(!placed.length) return;
+    var obj=placed.pop();
+    if(obj===grabbedObj){ setHighlight(obj,false); grabbedObj=null; }
+    scene.remove(obj); updateCount(); toast('↩ Removed');
   });
   document.getElementById('b-up').addEventListener('click',function(){
-    userScale=Math.min(userScale+.25,4);
-    toast('Next size: '+userScale.toFixed(2)+'×');
+    if(grabbedObj){
+      // Scale grabbed object directly
+      var s=Math.min(grabbedObj.scale.x+.15, 4);
+      grabbedObj.scale.setScalar(s);
+      toast('Scale: '+s.toFixed(2)+'×');
+    } else {
+      userScale=Math.min(userScale+.25,4);
+      toast('Next size: '+userScale.toFixed(2)+'×');
+    }
   });
   document.getElementById('b-dn').addEventListener('click',function(){
-    userScale=Math.max(userScale-.25,.25);
-    toast('Next size: '+userScale.toFixed(2)+'×');
+    if(grabbedObj){
+      var s=Math.max(grabbedObj.scale.x-.15,.15);
+      grabbedObj.scale.setScalar(s);
+      toast('Scale: '+s.toFixed(2)+'×');
+    } else {
+      userScale=Math.max(userScale-.25,.25);
+      toast('Next size: '+userScale.toFixed(2)+'×');
+    }
   });
   document.getElementById('b-clr').addEventListener('click',function(){
+    if(grabbedObj){ setHighlight(grabbedObj,false); grabbedObj=null; }
     placed.forEach(function(o){scene.remove(o);}); placed=[]; updateCount(); toast('All cleared');
   });
   document.getElementById('enter-ar').addEventListener('click',enterAR);
+  document.getElementById('mode-place').addEventListener('click',function(){ setMode('place'); });
+  document.getElementById('mode-move').addEventListener('click',function(){ setMode('move'); });
 }
 
-// ── AR AVAILABILITY ───────────────────────────────────────────────
+// ── AR CHECK ─────────────────────────────────────────────────────
 function checkAR(){
-  if(!navigator.xr){markUnavailable();return;}
-  navigator.xr.isSessionSupported('immersive-ar').then(function(ok){
-    if(!ok) markUnavailable();
-  }).catch(markUnavailable);
+  if(!navigator.xr){markNA();return;}
+  navigator.xr.isSessionSupported('immersive-ar').then(function(ok){ if(!ok) markNA(); }).catch(markNA);
 }
-function markUnavailable(){
+function markNA(){
   var btn=document.getElementById('enter-ar');
-  btn.innerHTML='⚠ AR NOT AVAILABLE';
-  btn.classList.add('na');
+  btn.innerHTML='⚠ AR NOT AVAILABLE'; btn.classList.add('na');
   btn.onclick=function(){toast('Use Chrome on Android with ARCore');};
-  setBadge('● NO WEBXR');
-  setTimeout(function(){toast('Open in Chrome on an ARCore-compatible Android device');},2000);
+  setBadge('● NO WEBXR',true);
+  setTimeout(function(){toast('Open in Chrome on an ARCore-compatible Android phone');},2000);
 }
 
 // ── LOADER ───────────────────────────────────────────────────────
 function runLoader(cb){
-  var fill=document.getElementById('lfill');
-  var p=0;
+  var fill=document.getElementById('lfill'); var p=0;
   var iv=setInterval(function(){
-    p+=5+Math.random()*10;
-    fill.style.width=Math.min(p,100)+'%';
+    p+=5+Math.random()*10; fill.style.width=Math.min(p,100)+'%';
     if(p>=100){clearInterval(iv);setTimeout(cb,150);}
   },50);
 }
@@ -582,11 +695,7 @@ function runLoader(cb){
 window.addEventListener('DOMContentLoaded',function(){
   runLoader(function(){
     try{
-      initScene();
-      buildTray();
-      bindButtons();
-      checkAR();
-      startPreview();
+      initScene(); buildTray(); bindButtons(); checkAR(); startPreview();
     }catch(e){
       console.error(e);
       document.getElementById('loader').innerHTML='<h1 style="color:#FF2D6B">ERROR</h1><p style="color:rgba(255,255,255,.4);font-family:monospace;font-size:.75rem;margin-top:1rem;max-width:280px;text-align:center">'+e.message+'</p>';
