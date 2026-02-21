@@ -368,9 +368,10 @@ function enterAR(){
             }).then(function(s){hitSrcDown=s;tryStart();}).catch(function(){tryStart();});
 
             // Ray tilted 50° up (hits ceilings when looking forward/slightly up)
+            // Origin must be {0,0,0,1} — the bug was passing direction as origin too
             session.requestHitTestSource({
               space: viewerSpace,
-              offsetRay: new XRRay({x:0,y:.766,z:-.643,w:0},{x:0,y:.766,z:-.643,w:0})
+              offsetRay: new XRRay({x:0,y:0,z:0,w:1},{x:0,y:0.766,z:-0.643,w:0})
             }).then(function(s){hitSrcUp=s;tryStart();}).catch(function(){tryStart();});
 
           } catch(e) {
@@ -417,16 +418,12 @@ function onSessionEnd(){
 }
 
 // ── CLASSIFY SURFACE FROM HIT MATRIX ────────────────────────
-// Extract the Y component of the surface normal from the hit pose matrix.
-// Hit pose matrix columns: [right, up, -forward, position]
-// Normal of the hit surface = column 1 (up vector of the hit pose) = m[4],m[5],m[6]
-// If normal.y > 0.6  → floor (normal pointing up)
-// If normal.y < -0.6 → ceiling (normal pointing down)
-// Otherwise         → wall (normal mostly horizontal)
+// Column 1 of hit pose matrix = surface normal. m[5] = normal.y
+// ny > 0 → floor (normal up), ny < 0 → ceiling (normal down), else → wall
 function classifySurface(m){
-  var ny=m[5]; // Y component of the hit surface normal
-  if(ny>0.5) return 'floor';
-  if(ny<-0.5) return 'ceiling';
+  var ny=m[5];
+  if(ny>0.35)  return 'floor';   // lenient: 0.35 catches real-world slightly-tilted ceilings
+  if(ny<-0.35) return 'ceiling'; // lenient: ARCore ceiling normals often not exactly -1
   return 'wall';
 }
 
@@ -451,18 +448,28 @@ function arLoop(ts,frame){
     var type=classifySurface(m);
     var pos=new THREE.Vector3(m[12],m[13],m[14]);
 
-    // Score this hit: prefer hit closest to where camera is pointing
-    // Use camera→hit direction alignment
+    // Score = how well the camera ray aligns toward the hit point
     var camPos=new THREE.Vector3();
     camera.getWorldPosition(camPos);
     var toHit=new THREE.Vector3().subVectors(pos,camPos).normalize();
-    var alignment=toHit.dot(camDir); // 1 = perfect alignment
+    var camAlignment=toHit.dot(camDir); // 1 = hit directly in front of camera
 
-    if(!bestHitPos || alignment > (bestScore||0)){
+    // BONUS: reward hits whose surface type matches where the camera is looking
+    // camDir.y > 0.3  → looking up   → prefer ceiling hits
+    // camDir.y < -0.3 → looking down → prefer floor hits
+    // else            → looking level → prefer wall hits
+    var typeBonus=0;
+    if(camDir.y>0.3  && type==='ceiling') typeBonus=0.5;
+    if(camDir.y<-0.3 && type==='floor')   typeBonus=0.5;
+    if(Math.abs(camDir.y)<0.3 && type==='wall') typeBonus=0.3;
+
+    var score=camAlignment+typeBonus;
+
+    if(!bestHitPos || score > (bestScore||-999)){
       bestHitPos=pos;
       bestMatrix=m;
       bestType=type;
-      bestScore=alignment;
+      bestScore=score;
     }
   }
   var bestScore=null;
